@@ -32,6 +32,8 @@ and explicit exclusions.
 
 ## Python
 
+- Follow the standalone `python-standards` skill for concise docstrings, short
+	purposeful comments, typing, tests, and financial calculation conventions.
 - Use Google-style docstrings for public APIs, including `Args`, `Returns`, and `Raises` where applicable.
 - Public finance and calculation APIs must state units and cite the governing formula or business rule when one exists.
 - Keep files below roughly 500 lines; split by domain capability when they grow.

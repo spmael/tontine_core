@@ -142,6 +142,7 @@ Version 1 includes:
 - investment valuation;
 - member ownership tracking;
 - net asset value calculation;
+- financial account registry and ledger-account mapping;
 - accounting ledger;
 - transaction history;
 - group rules;
@@ -160,6 +161,7 @@ Version 1 includes:
 Version 1 must not include:
 
 - bank account connectivity;
+- automatic account balance synchronization;
 - Wise integration;
 - Revolut integration;
 - Mobile Money integration;
@@ -513,6 +515,28 @@ Credit  Investment Income
 
 The exact chart of accounts should be configurable enough for future expansion while remaining simple in Version 1.
 
+## 11.4 Financial Account Registry
+
+Version 1 must register the external accounts or custody locations that a group
+uses to hold money or assets. This is a record of context, not a connection to
+the account.
+
+Each registered financial account may include:
+
+- unique identifier;
+- display name;
+- account type, such as cash, bank, mobile wallet, broker, or other;
+- institution name and country;
+- currency;
+- masked account reference;
+- owner or custodian description;
+- linked ledger account;
+- active or inactive status.
+
+Contributions, payouts, cash movements, and investment transactions may reference
+a registered financial account. The package must not store credentials, retrieve
+live balances, initiate transfers, or connect directly to financial institutions.
+
 ## 11.3 Ledger Requirements
 
 Each journal entry must include:
@@ -803,6 +827,10 @@ Version 1 should expose entities and repository interfaces that allow consuming 
 
 A simple in-memory implementation should be provided for testing and examples.
 
+Financial account records and their links to ledger accounts must be available
+through the same repository boundary. External synchronization belongs in a
+separate adapter.
+
 ---
 
 # 20. Public API Design Goals
@@ -944,6 +972,7 @@ tontine-core/
 │       ├── contributions/
 │       ├── payouts/
 │       ├── investments/
+│       ├── accounts/
 │       ├── ledger/
 │       ├── governance/
 │       ├── reports/
