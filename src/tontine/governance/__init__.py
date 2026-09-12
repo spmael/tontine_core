@@ -8,6 +8,7 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
+from tontine.audit import AuditEvent, AuditEventRegistry
 from tontine.classic import ClassicRotation
 
 
@@ -28,22 +29,6 @@ class VoteChoice(StrEnum):
     YES = "yes"
     NO = "no"
     ABSTAIN = "abstain"
-
-
-@dataclass(frozen=True)
-class AuditEvent:
-    """Append-only record of a significant governance decision."""
-
-    event_id: str
-    event_type: str
-    aggregate_id: str
-    occurred_at: datetime
-    details: dict[str, Any]
-
-    def __post_init__(self) -> None:
-        if self.occurred_at.tzinfo is None or self.occurred_at.utcoffset() is None:
-            raise ValueError("Audit timestamps must be timezone-aware.")
-        object.__setattr__(self, "details", dict(self.details))
 
 
 @dataclass(frozen=True)
@@ -87,6 +72,7 @@ class GovernanceRegistry:
         self,
         active_member_ids: tuple[str, ...],
         initial_rotation: ClassicRotation,
+        audit_registry: AuditEventRegistry | None = None,
     ) -> None:
         if not active_member_ids:
             raise ValueError("Governance requires active members.")
@@ -94,7 +80,7 @@ class GovernanceRegistry:
         self._rotations: dict[int, ClassicRotation] = {1: initial_rotation}
         self._proposals: dict[str, RotationProposal] = {}
         self._rulesets: list[Ruleset] = []
-        self._audit_events: list[AuditEvent] = []
+        self._audit_registry = audit_registry or AuditEventRegistry()
 
     def create_rotation_proposal(
         self,
@@ -193,9 +179,7 @@ class GovernanceRegistry:
 
     def audit_events(self, aggregate_id: str) -> tuple[AuditEvent, ...]:
         """Return immutable audit events for a proposal or governance aggregate."""
-        return tuple(
-            event for event in self._audit_events if event.aggregate_id == aggregate_id
-        )
+        return self._audit_registry.events_for("proposal", aggregate_id)
 
     def add_ruleset(self, ruleset: Ruleset) -> None:
         """Add a new immutable ruleset version in effective-cycle order."""
@@ -221,14 +205,16 @@ class GovernanceRegistry:
             raise KeyError(f"Proposal {proposal_id!r} was not found.") from exc
 
     def _audit(self, event_type: str, aggregate_id: str, occurred_at: datetime) -> None:
-        self._audit_events.append(
-            AuditEvent(
-                event_id=f"{event_type}:{aggregate_id}:{len(self._audit_events) + 1}",
-                event_type=event_type,
-                aggregate_id=aggregate_id,
-                occurred_at=occurred_at,
-                details={"source": "governance"},
-            )
+        event_number = len(self._audit_registry.all_events()) + 1
+        self._audit_registry.record(
+            event_id=f"{event_type}:{aggregate_id}:{event_number}",
+            event_type=event_type,
+            aggregate_type="proposal",
+            aggregate_id=aggregate_id,
+            occurred_at=occurred_at,
+            actor_id=None,
+            source_event=None,
+            details={"source": "governance"},
         )
 
 

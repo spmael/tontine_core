@@ -14,7 +14,7 @@ _Generated from capability and task frontmatter._
 - in_progress: 0
 - partial: 0
 - ready: 0
-- shipped: 32
+- shipped: 33
 
 ## Items
 
@@ -43,6 +43,7 @@ _Generated from capability and task frontmatter._
 | task | TASK-CON-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-CON-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-GOV-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
+| task | TASK-GOV-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-GROUP-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-GROUP-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-GROUP-003 | shipped | 2026-09-12 | 2026-09-12 | domain |

@@ -45,5 +45,9 @@ class DuplicateInvestmentEventError(TontineError):
     """Raised when an investment event identifier is recorded more than once."""
 
 
+class DuplicateAuditEventError(TontineError):
+    """Raised when an audit event identifier is recorded more than once."""
+
+
 class InvalidMembershipTransitionError(TontineError):
     """Raised when a membership status transition is not permitted."""

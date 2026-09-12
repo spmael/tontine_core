@@ -3,6 +3,7 @@ from decimal import Decimal
 
 import pytest
 
+from tontine.audit import AuditEventRegistry
 from tontine.classic import ClassicRotation
 from tontine.governance import (
     GovernanceRegistry,
@@ -49,6 +50,29 @@ def test_rotation_proposal_requires_votes_and_activates_at_effective_cycle(
     assert activated.recipient_for_cycle(1) == "member-e"
     assert governance.audit_events("proposal-1")
     assert proposal.status is ProposalStatus.APPROVED
+
+
+def test_governance_uses_shared_audit_registry() -> None:
+    audit_registry = AuditEventRegistry()
+    governance = GovernanceRegistry(
+        active_member_ids=("member-a",),
+        initial_rotation=ClassicRotation.from_active_members(("member-a",)),
+        audit_registry=audit_registry,
+    )
+
+    governance.create_rotation_proposal(
+        proposal_id="proposal-shared",
+        title="Shared audit",
+        description="Use the canonical audit registry.",
+        proposer_id="member-a",
+        rotation_order=("member-a",),
+        approval_threshold=Decimal("100"),
+        effective_cycle=2,
+        created_at=datetime(2027, 1, 1, tzinfo=UTC),
+        voting_deadline=datetime(2027, 1, 2, tzinfo=UTC),
+    )
+
+    assert audit_registry.events_for("proposal", "proposal-shared")
 
 
 def test_governance_rejects_duplicate_and_ineligible_votes(

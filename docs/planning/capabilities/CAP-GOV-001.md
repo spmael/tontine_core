@@ -41,6 +41,7 @@ while preserving a traceable audit history.
 ## Implementation Tasks
 
 - [x] TASK-GOV-001: Add vote-approved rotation proposals and governance primitives.
+- [x] TASK-GOV-002: Add cross-capability append-only audit event registry.
 
 ## Verification
 
