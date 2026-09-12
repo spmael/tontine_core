@@ -1,6 +1,9 @@
 ---
 id: CAP-<DOMAIN>-001
 status: backlog
+started: null
+completed: null
+adr_refs: []
 requirements:
   - FR-TEMPLATE-001
 owner: <owner>

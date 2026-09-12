@@ -1,6 +1,8 @@
 ---
 id: TASK-PACKAGE-002
-status: backlog
+status: shipped
+started: 2026-09-12
+completed: 2026-09-12
 requirements:
   - FR-PKG-001
   - NFR-PKG-001
@@ -17,26 +19,31 @@ for testing, linting, formatting, and type checking.
 
 ## Acceptance Criteria
 
-- [ ] `pyproject.toml` declares the distribution name `tontine-core`.
-- [ ] The package requires Python 3.12 or newer.
-- [ ] Pytest, Ruff, and a type checker are configured as development tools.
-- [ ] Core runtime dependencies remain empty unless the BRD requires one.
-- [ ] Tool commands are documented and reproducible in a fresh environment.
+- [x] `pyproject.toml` declares the distribution name `tontine-core`.
+- [x] The package requires Python 3.12 or newer.
+- [x] Pytest, Ruff, and a type checker are configured as development tools.
+- [x] Core runtime dependencies remain empty unless the BRD requires one.
+- [x] Tool commands are documented and reproducible in a fresh environment.
 
 ## Planned Changes
 
 - `pyproject.toml`
 - `README.md`
-- `uv.lock` or another lock file only if the chosen workflow requires it
+- `uv.lock`
 
 ## Validation
 
 ```text
-python -m pytest
-ruff check .
-ruff format --check .
+uv run pytest
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy src
 ```
 
 ## Completion Notes
 
-Not started.
+Added `pyproject.toml` with `tontine-core` distribution metadata, Python 3.12+
+support, setuptools build configuration, and uv-managed development dependencies
+for pytest, Ruff, mypy, and build. Generated `uv.lock`.
+
+Completion record: `docs/planning/completions/TASK-PACKAGE-002.md`.

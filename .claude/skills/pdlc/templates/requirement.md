@@ -2,6 +2,8 @@
 id: FR-TEMPLATE-001
 kind: functional | non_functional
 status: backlog
+started: null
+completed: null
 owner: domain-capability
 ---
 

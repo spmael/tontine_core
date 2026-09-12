@@ -5,45 +5,35 @@ period: 2026-09-12
 
 # Package Delivery Status
 
+_Generated from capability and task frontmatter._
+
 ## Summary
 
-- Backlog: 7 capabilities
-- Ready: 3 capabilities
-- In progress: 0 capabilities
-- Blocked: 0 capabilities
-- Partial: 0 capabilities
-- Shipped: 0 capabilities
+- backlog: 5
+- blocked: 0
+- in_progress: 0
+- partial: 0
+- ready: 4
+- shipped: 4
 
-## In Progress
+## Items
 
-None. The package has a requirements register and a selected first vertical
-slice; implementation has not started.
+| Type | ID | Status | Started | Completed | Owner |
+| --- | --- | --- | --- | --- | --- |
+| capability | CAP-ACCOUNT-001 | backlog |  |  | domain |
+| capability | CAP-CON-001 | ready |  |  | domain |
+| capability | CAP-GROUP-001 | ready |  |  | domain |
+| capability | CAP-PACKAGE-001 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
+| task | TASK-ACCOUNT-001 | backlog |  |  | domain |
+| task | TASK-ACCOUNT-002 | backlog |  |  | domain |
+| task | TASK-ACCOUNT-003 | backlog |  |  | domain |
+| task | TASK-CON-001 | ready |  |  | domain |
+| task | TASK-CON-002 | backlog |  |  | domain |
+| task | TASK-GROUP-001 | ready |  |  | domain |
+| task | TASK-PACKAGE-001 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
+| task | TASK-PACKAGE-002 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
+| task | TASK-PACKAGE-003 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
 
-## Blocked
+## Evidence Checks
 
-None currently. Technical choices that are intentionally open are recorded as
-future architecture decisions rather than guessed here.
-
-## Recent Planning Progress
-
-- Planning foundation: BRD translated into 43 stable functional and
-  non-functional requirements.
-- Package foundation added as the first delivery item: `src/tontine/`,
-  `tontine-core` distribution metadata, Python 3.12+ tooling, and smoke checks.
-- First domain slice follows package bootstrap: group, membership, contribution
-  rules, cycles, contribution status, and duplicate protection.
-- Financial account registry included in Version 1 before ledger integration;
-  account connectivity and custody remain excluded.
-
-## Coverage Gaps
-
-- Package foundation is planned but not implemented yet.
-- No executable tests exist yet.
-- Ledger, persistence interfaces, governance, reporting, and investment behavior
-  remain unimplemented.
-- Financial account registration and event linking remain unimplemented.
-
-## Decisions Needed
-
-- Decide whether to use Hatchling, Setuptools, or another PEP 517 build backend.
-- Decide whether the initial type-checker should be Mypy or Pyright.
+- No shipped-item evidence problems detected.

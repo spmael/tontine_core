@@ -1,6 +1,9 @@
 ---
 id: TASK-<DOMAIN>-001
 status: ready
+started: null
+completed: null
+adr_refs: []
 requirements:
   - FR-TEMPLATE-001
 capability: CAP-<DOMAIN>-001

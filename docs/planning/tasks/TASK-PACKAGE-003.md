@@ -1,6 +1,8 @@
 ---
 id: TASK-PACKAGE-003
-status: backlog
+status: shipped
+started: 2026-09-12
+completed: 2026-09-12
 requirements:
   - FR-PKG-001
   - NFR-PKG-001
@@ -18,10 +20,10 @@ domain behavior is implemented.
 
 ## Acceptance Criteria
 
-- [ ] The package imports from the `src/` layout in the configured test environment.
-- [ ] A minimal pytest smoke test passes without a database or web framework.
-- [ ] A source distribution and wheel can be built locally.
-- [ ] The README shows the correct installation and import commands.
+- [x] The package imports from the `src/` layout in the configured test environment.
+- [x] A minimal pytest smoke test passes without a database or web framework.
+- [x] A source distribution and wheel can be built locally.
+- [x] The README shows the correct installation and import commands.
 
 ## Planned Changes
 
@@ -32,10 +34,13 @@ domain behavior is implemented.
 ## Validation
 
 ```text
-python -m pytest tests/test_import.py
-python -m build
+uv run pytest tests/test_import.py
+uv build
 ```
 
 ## Completion Notes
 
-Not started.
+Added the package import smoke test and documented the uv workflow in `README.md`.
+Verified `uv run pytest`, Ruff check and format checks, mypy, and `uv build`.
+
+Completion record: `docs/planning/completions/TASK-PACKAGE-003.md`.

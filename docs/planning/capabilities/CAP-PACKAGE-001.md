@@ -1,6 +1,8 @@
 ---
 id: CAP-PACKAGE-001
-status: ready
+status: shipped
+started: 2026-09-12
+completed: 2026-09-12
 requirements:
   - FR-PKG-001
   - NFR-PKG-001
@@ -24,12 +26,12 @@ quality-check workflow.
 
 ## Acceptance Criteria
 
-- [ ] `src/tontine/__init__.py` exists and imports successfully.
-- [ ] Distribution metadata names the project `tontine-core`.
-- [ ] The supported Python baseline is Python 3.12 or newer.
-- [ ] An isolated test command runs without a database or web framework.
-- [ ] Quality tooling is configured without coupling the core package to a framework.
-- [ ] README documentation explains installation and the import name.
+- [x] `src/tontine/__init__.py` exists and imports successfully.
+- [x] Distribution metadata names the project `tontine-core`.
+- [x] The supported Python baseline is Python 3.12 or newer.
+- [x] An isolated test command runs without a database or web framework.
+- [x] Quality tooling is configured without coupling the core package to a framework.
+- [x] README documentation explains installation and the import name.
 
 ## Implementation Tasks
 
@@ -42,3 +44,9 @@ quality-check workflow.
 - Build: `python -m build`
 - Tests: `python -m pytest`
 - Import: `python -c "import tontine"`
+
+Completion records: `docs/planning/completions/TASK-PACKAGE-001.md`,
+`TASK-PACKAGE-002.md`, and `TASK-PACKAGE-003.md`.
+
+Completion records: `docs/planning/completions/TASK-PACKAGE-001.md`,
+`TASK-PACKAGE-002.md`, and `TASK-PACKAGE-003.md`.

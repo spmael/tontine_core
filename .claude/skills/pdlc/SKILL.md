@@ -21,6 +21,9 @@ domain capability, not by web application or framework.
 - Monitor progress from backlog through ready, in progress, blocked, partial, and shipped.
 - Record design decisions and unresolved assumptions instead of hiding them in code.
 - Audit the real package and tests, not only planning documents.
+- Preserve execution evidence in one completion record per shipped task.
+- Use the bundled status roller to regenerate `docs/planning/STATUS.md` from
+  capability and task frontmatter.
 
 ## Recommended structure
 
@@ -30,6 +33,7 @@ docs/
     requirements.md
     capabilities/
     tasks/
+    completions/
     STATUS.md
   architecture/
     adr/
@@ -43,8 +47,25 @@ Use the templates bundled with this skill:
 - `templates/requirement.md` for functional and non-functional requirements
 - `templates/capability.md` for domain capabilities
 - `templates/task.md` for implementation work
+- `templates/completion.md` for shipped-task evidence
 - `templates/adr.md` for architecture or domain decisions
 - `templates/status.md` for progress monitoring
+
+Use `references/state-model.md` as the canonical reference for IDs, frontmatter,
+status rollups, completion evidence, traceability, and ADR citations.
+Use `references/traceability.md` for requirement coverage and wiring checks before
+marking package behavior shipped.
+Use `references/operating-model.md` for source-of-truth, delivery, roadmap, and
+external-synchronization rules.
+
+The stdlib-only status roller is at `scripts/status.py`; run it with `uv run
+python .claude/skills/pdlc/scripts/status.py docs/planning`.
+
+The stdlib-only ADR reverse index is at `scripts/adr_index.py`; run it with
+`uv run python .claude/skills/pdlc/scripts/adr_index.py`.
+
+The stdlib-only traceability checker is at `scripts/traceability.py`; run it with
+`uv run python .claude/skills/pdlc/scripts/traceability.py docs/planning`.
 
 ## Workflow
 
@@ -54,9 +75,14 @@ Use the templates bundled with this skill:
 4. Implement domain behavior first, keeping adapters outside the core package.
 5. Add focused tests for normal behavior, invalid transitions, duplicate events,
    money precision, and ledger-derived results.
-6. Verify the task against its acceptance criteria and update its status.
-7. Recheck traceability so every requirement has a capability or task owner.
-8. Record gaps, assumptions, and follow-up decisions for human review.
+6. Check every satisfied acceptance criterion with `[x]`; leave incomplete criteria
+  unchecked and use `partial` or `blocked` instead of claiming completion.
+7. Create `docs/planning/completions/TASK-<ID>.md` with dates, evidence, commands,
+  changed files, and remaining gaps.
+8. Update `started` and `completed` dates on the task and capability only when
+  the evidence supports the status.
+9. Recheck traceability so every requirement has a capability or task owner.
+10. Record gaps, assumptions, and follow-up decisions for human review.
 
 ## Status rules
 
@@ -71,6 +97,9 @@ Use only these statuses:
 
 Never mark work `shipped` without executable validation. Unknown dates and explicit
 open questions are preferable to invented certainty.
+
+Every `shipped` task must have all acceptance criteria checked and a matching
+completion record. A task with unchecked criteria cannot be `shipped`.
 
 ## Domain review checklist
 
