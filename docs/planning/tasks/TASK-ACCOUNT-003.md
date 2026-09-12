@@ -1,6 +1,8 @@
 ---
 id: TASK-ACCOUNT-003
-status: backlog
+status: shipped
+started: 2026-09-12
+completed: 2026-09-12
 requirements:
   - FR-ACC-001
   - FR-ACC-002
@@ -19,10 +21,10 @@ one, with tests that protect the Version 1 boundary.
 
 ## Acceptance Criteria
 
-- [ ] Examples show a masked bank or cash account reference.
-- [ ] Tests prove credentials and live-access operations are not part of the API.
-- [ ] Account-to-ledger mapping is documented.
-- [ ] The README explains that real money remains with external institutions.
+- [x] Examples show a masked bank or cash account reference.
+- [x] Tests prove credentials and live-access operations are not part of the API.
+- [x] Account-to-ledger mapping is documented.
+- [x] The README explains that real money remains with external institutions.
 
 ## Planned Changes
 
@@ -38,4 +40,4 @@ python -m pytest tests/accounts
 
 ## Completion Notes
 
-Not started.
+Documented the account registry boundary, masked-reference examples, logical ledger mapping, and external custody responsibility in the README. Tests reject credential-like and unmasked references.

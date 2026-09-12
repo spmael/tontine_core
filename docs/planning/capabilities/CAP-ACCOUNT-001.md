@@ -1,6 +1,8 @@
 ---
 id: CAP-ACCOUNT-001
-status: backlog
+status: shipped
+started: 2026-09-12
+completed: 2026-09-12
 adr_refs: []
 depends_on:
   - CAP-PACKAGE-001
@@ -29,18 +31,18 @@ external funds.
 
 ## Acceptance Criteria
 
-- [ ] Register cash, bank, mobile wallet, broker, and other account types.
-- [ ] Record institution, country, currency, masked reference, custodian description, and active status.
-- [ ] Link a registered account to a logical ledger account.
-- [ ] Allow contributions, payouts, cash movements, and investments to reference the account.
-- [ ] Reject credentials, unmasked secrets, and unsupported account-access operations.
-- [ ] Reconstruct account references from recorded events without live external access.
+- [x] Register cash, bank, microfinance, mobile wallet, broker, and other account types.
+- [x] Record institution, country, currency, masked reference, custodian description, and active status.
+- [x] Link a registered account to a logical ledger account.
+- [x] Allow contributions, payouts, cash movements, and investments to reference the account.
+- [x] Reject credentials, unmasked secrets, and unsupported account-access operations.
+- [x] Reconstruct account references from recorded events without live external access.
 
 ## Implementation Tasks
 
-- TASK-ACCOUNT-001: Define financial account entities and safe references.
-- TASK-ACCOUNT-002: Link financial accounts to ledger and transaction records.
-- TASK-ACCOUNT-003: Add account registry tests and documentation.
+- [x] TASK-ACCOUNT-001: Define financial account entities and safe references.
+- [x] TASK-ACCOUNT-002: Link financial accounts to ledger and transaction records.
+- [x] TASK-ACCOUNT-003: Add account registry tests and documentation.
 
 ## Verification
 

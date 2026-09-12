@@ -31,3 +31,10 @@ import tontine
 
 The core package is framework-independent and has no runtime dependency on a
 database, web framework, payment provider, or financial institution.
+
+## Financial Account Registry
+
+The account registry records external custody context only. For example, a bank
+account may be represented with `****1234`, `NG`, and a logical ledger identifier
+such as `ledger-cash-ngn`. The package does not store credentials, connect to
+institutions, retrieve live balances, initiate payments, or move real money.

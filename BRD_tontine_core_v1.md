@@ -274,6 +274,11 @@ Suggested statuses:
 - `left`;
 - `removed`.
 
+Optional future metadata may include a group's jurisdiction and a member's
+residence country. These fields are not required for Version 1 group or member
+creation and must not imply identity verification, tax classification, or
+regulatory decisions.
+
 Personal identity verification is outside Version 1.
 
 ---
@@ -527,7 +532,7 @@ Each registered financial account may include:
 
 - unique identifier;
 - display name;
-- account type, such as cash, bank, mobile wallet, broker, or other;
+- account type, such as cash, bank, microfinance, mobile wallet, broker, or other;
 - institution name and country;
 - currency;
 - masked account reference;

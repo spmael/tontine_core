@@ -1,6 +1,8 @@
 ---
 id: TASK-ACCOUNT-002
-status: backlog
+status: shipped
+started: 2026-09-12
+completed: 2026-09-12
 requirements:
   - FR-ACC-002
   - NFR-ACC-001
@@ -17,11 +19,11 @@ transactions to reference a registered financial account without external access
 
 ## Acceptance Criteria
 
-- [ ] A financial event can reference a registered account by identifier.
-- [ ] References are validated against the account registry.
-- [ ] Missing or inactive account references are handled explicitly.
-- [ ] No network, bank, broker, payment, or live-balance operation is introduced.
-- [ ] Tests prove event reconstruction from recorded references.
+- [x] A financial event can reference a registered account by identifier.
+- [x] References are validated against the account registry.
+- [x] Missing or inactive account references are handled explicitly.
+- [x] No network, bank, broker, payment, or live-balance operation is introduced.
+- [x] Tests prove event reconstruction from recorded references.
 
 ## Planned Changes
 
@@ -38,4 +40,4 @@ python -m pytest tests/accounts tests/ledger
 
 ## Completion Notes
 
-Not started.
+Implemented in-memory account registration, active-account event references, logical ledger-account links, duplicate protection, and deterministic reconstruction without network or financial-institution access.

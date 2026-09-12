@@ -2,33 +2,15 @@
 
 from __future__ import annotations
 
-import re
 from enum import StrEnum
 
+from tontine.currencies import CurrencyCode
 from tontine.exceptions import (
     DuplicateGroupError,
     DuplicateMemberError,
-    InvalidCurrencyError,
 )
 
 from ..members import Member
-
-_VALID_CURRENCY_CODES = {
-    "XAF",
-    "XOF",
-    "NGN",
-    "GHS",
-    "INR",
-    "KES",
-    "TZS",
-    "UGX",
-    "ZAR",
-    "JPY",
-    "CNY",
-    "EUR",
-    "GBP",
-    "USD",
-}
 
 
 class GroupId(str):
@@ -39,17 +21,6 @@ class GroupId(str):
             raise ValueError("Group identifier is required.")
         if any(char.isspace() for char in value):
             raise ValueError("Group identifier cannot contain whitespace.")
-        return str.__new__(cls, value)
-
-
-class CurrencyCode(str):
-    """ISO 4217-style currency code value object."""
-
-    def __new__(cls, value: str) -> CurrencyCode:
-        if not re.fullmatch(r"[A-Z]{3}", value):
-            raise InvalidCurrencyError(f"Invalid currency code: {value!r}.")
-        if value not in _VALID_CURRENCY_CODES:
-            raise InvalidCurrencyError(f"Unsupported currency code: {value!r}.")
         return str.__new__(cls, value)
 
 
