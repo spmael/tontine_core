@@ -94,7 +94,25 @@ class GovernanceRegistry:
         created_at: datetime,
         voting_deadline: datetime,
     ) -> RotationProposal:
-        """Create a draft rotation proposal without changing the active rotation."""
+        """Create a draft rotation proposal without changing active history.
+
+        Args:
+            proposal_id: Unique proposal identifier.
+            title: Short proposal title.
+            description: Decision context presented to voters.
+            proposer_id: Eligible member creating the proposal.
+            rotation_order: Candidate order containing every active member once.
+            approval_threshold: Required yes-vote percentage from 0 to 100.
+            effective_cycle: First cycle using the approved order.
+            created_at: Timezone-aware proposal creation timestamp.
+            voting_deadline: Timezone-aware deadline after creation.
+
+        Returns:
+            A draft rotation proposal.
+
+        Raises:
+            ValueError: If identity, threshold, dates, or rotation order is invalid.
+        """
         if proposal_id in self._proposals:
             raise ValueError(f"Proposal {proposal_id!r} already exists.")
         if proposer_id not in self._active_members:
@@ -136,7 +154,17 @@ class GovernanceRegistry:
         self._audit("proposal_opened", proposal_id, proposal.created_at)
 
     def vote(self, proposal_id: str, member_id: str, choice: VoteChoice) -> None:
-        """Record one eligible member vote on an open proposal."""
+        """Record one eligible member vote on an open proposal.
+
+        Args:
+            proposal_id: Proposal receiving the vote.
+            member_id: Eligible member submitting the vote.
+            choice: Yes, no, or abstain.
+
+        Raises:
+            ValueError: If the proposal is not open, the member is ineligible,
+                or the member has already voted.
+        """
         proposal = self._proposal(proposal_id)
         if proposal.status is not ProposalStatus.OPEN:
             raise ValueError("Only open proposals can receive votes.")
@@ -148,7 +176,15 @@ class GovernanceRegistry:
         self._audit("vote_submitted", proposal_id, datetime.now().astimezone())
 
     def evaluate(self, proposal_id: str) -> ProposalStatus:
-        """Evaluate approval using yes votes divided by eligible members."""
+        """Evaluate approval using yes votes divided by eligible members.
+
+        Args:
+            proposal_id: Proposal to evaluate.
+
+        Returns:
+            The proposal's resulting status. Approved rotations become effective
+            only at their configured cycle.
+        """
         proposal = self._proposal(proposal_id)
         if proposal.status is not ProposalStatus.OPEN:
             return proposal.status

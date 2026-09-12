@@ -1,0 +1,83 @@
+from datetime import UTC, datetime
+from decimal import Decimal
+
+import pytest
+
+from tontine.audit import AuditEvent
+from tontine.classic import ClassicPayout, ClassicRotation
+from tontine.governance import RotationProposal, Ruleset
+from tontine.members import Member, MemberRole
+from tontine.repositories import (
+    InMemoryAuditRepository,
+    InMemoryClassicRepository,
+    InMemoryGovernanceRepository,
+    InMemoryMemberRepository,
+)
+
+
+def test_member_repository_has_duplicate_and_ordering_semantics() -> None:
+    repository = InMemoryMemberRepository()
+    repository.add(Member.create("member-b", "B", MemberRole.MEMBER))
+    repository.add(Member.create("member-a", "A", MemberRole.MEMBER))
+
+    assert [member.member_id for member in repository.list()] == [
+        "member-a",
+        "member-b",
+    ]
+    with pytest.raises(ValueError, match="already"):
+        repository.add(Member.create("member-a", "A2", MemberRole.MEMBER))
+
+
+def test_classic_repository_preserves_rotations_and_payout_order() -> None:
+    repository = InMemoryClassicRepository()
+    repository.save_rotation(
+        "rotation-1", ClassicRotation.from_active_members(("a", "b"))
+    )
+    repository.record_payout(
+        ClassicPayout(
+            1,
+            "a",
+            Decimal("100"),
+            "JPY",
+            datetime(2027, 1, 1, tzinfo=UTC),
+            "payout-1",
+        )
+    )
+
+    assert repository.get_rotation("rotation-1").recipient_for_cycle(1) == "a"
+    assert [payout.cycle_number for payout in repository.payouts()] == [1]
+
+
+def test_governance_and_audit_repositories_store_immutable_records() -> None:
+    governance = InMemoryGovernanceRepository()
+    proposal = RotationProposal(
+        proposal_id="proposal-1",
+        title="Change",
+        description="Change rotation",
+        proposer_id="member-a",
+        rotation_order=("member-a", "member-b"),
+        approval_threshold=Decimal("60"),
+        effective_cycle=2,
+        created_at=datetime(2027, 1, 1, tzinfo=UTC),
+        voting_deadline=datetime(2027, 1, 2, tzinfo=UTC),
+    )
+    governance.save_proposal(proposal)
+    governance.save_ruleset(Ruleset("rules-1", 1, 1, {"amount": "100"}))
+
+    audit = InMemoryAuditRepository()
+    event = AuditEvent(
+        "audit-1",
+        "vote.submitted",
+        "proposal",
+        "proposal-1",
+        datetime(2027, 1, 1, tzinfo=UTC),
+        "member-a",
+        "vote-1",
+        {"choice": "yes"},
+    )
+    audit.record(event)
+
+    assert governance.get_proposal("proposal-1") is proposal
+    assert audit.events_for("proposal", "proposal-1") == (event,)
+    with pytest.raises(ValueError, match="already"):
+        audit.record(event)

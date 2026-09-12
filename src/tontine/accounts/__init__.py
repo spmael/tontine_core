@@ -137,7 +137,14 @@ class FinancialAccountRegistry:
         self._ledger_accounts: dict[str, str] = {}
 
     def register(self, account: FinancialAccount) -> None:
-        """Register an account without contacting the external institution."""
+        """Register an account without contacting the external institution.
+
+        Args:
+            account: Validated immutable external-account record.
+
+        Raises:
+            DuplicateAccountError: If the account ID is already registered.
+        """
         if account.account_id in self._accounts:
             raise DuplicateAccountError(
                 f"Account {account.account_id!r} is already registered."
@@ -146,7 +153,14 @@ class FinancialAccountRegistry:
         self._events[account.account_id] = []
 
     def get(self, account_id: str) -> FinancialAccount:
-        """Return a registered account by identifier."""
+        """Return a registered account by identifier.
+
+        Args:
+            account_id: Stable financial-account identifier.
+
+        Raises:
+            KeyError: If no account has the requested ID.
+        """
         try:
             return self._accounts[account_id]
         except KeyError as exc:
@@ -159,7 +173,17 @@ class FinancialAccountRegistry:
         account_id: str,
         event_date: date,
     ) -> AccountEventReference:
-        """Record an event reference without processing the underlying event."""
+        """Record an event reference without processing the underlying event.
+
+        Args:
+            event_id: Stable source-event identifier.
+            event_type: Contribution, payout, cash-movement, or investment type.
+            account_id: Registered account referenced by the event.
+            event_date: Date on which the event occurred.
+
+        Returns:
+            The immutable account-event reference.
+        """
         account = self.get(account_id)
         if account.status is AccountStatus.INACTIVE:
             raise ValueError(f"Account {account_id!r} is inactive.")
@@ -178,7 +202,12 @@ class FinancialAccountRegistry:
         return tuple(self._events[account_id])
 
     def link_ledger_account(self, account_id: str, ledger_account_id: str) -> None:
-        """Link an account record to a logical ledger identifier."""
+        """Link an account record to a logical ledger identifier.
+
+        Args:
+            account_id: Registered financial-account identifier.
+            ledger_account_id: Non-empty logical ledger identifier.
+        """
         self.get(account_id)
         if not ledger_account_id or any(char.isspace() for char in ledger_account_id):
             raise ValueError("Logical ledger account identifier is invalid.")

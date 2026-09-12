@@ -74,15 +74,24 @@ class JournalEntry:
         object.__setattr__(self, "entries", tuple(self.entries))
 
 
-class LedgerRepository:
-    """Store posted journals and derive balances from their entries."""
+class InMemoryLedgerRepository:
+    """Store posted journals and derive balances from their entries in memory."""
 
     def __init__(self) -> None:
         self._journals: list[JournalEntry] = []
         self._journal_ids: set[str] = set()
 
     def post(self, journal: JournalEntry) -> None:
-        """Post a balanced journal without maintaining manual balances."""
+        """Post a balanced journal without maintaining manual balances.
+
+        Args:
+            journal: Immutable journal with Decimal entries in one currency.
+
+        Raises:
+            DuplicateJournalError: If the journal identifier is already posted.
+            ValueError: If entries are missing a debit or credit, use mixed
+                currencies, or do not balance.
+        """
         if journal.journal_id in self._journal_ids:
             raise DuplicateJournalError(
                 f"Journal {journal.journal_id!r} is already posted."
@@ -125,7 +134,16 @@ class LedgerRepository:
         original_journal_id: str,
         recorded_at: datetime,
     ) -> JournalEntry:
-        """Post a reversal with debit and credit directions inverted."""
+        """Post a reversal with debit and credit directions inverted.
+
+        Args:
+            journal_id: Identifier for the new reversal journal.
+            original_journal_id: Identifier of the posted journal to reverse.
+            recorded_at: Timezone-aware timestamp for the reversal.
+
+        Returns:
+            The immutable reversal journal.
+        """
         original = self._journal_for(original_journal_id)
         reversal = JournalEntry(
             journal_id=journal_id,
@@ -158,7 +176,18 @@ class LedgerRepository:
         recorded_at: datetime,
         description: str,
     ) -> JournalEntry:
-        """Post an explicit adjustment linked to an original journal."""
+        """Post an explicit adjustment linked to an original journal.
+
+        Args:
+            journal_id: Identifier for the new adjustment journal.
+            original_journal_id: Identifier of the journal being adjusted.
+            entries: Balanced Decimal entries for the adjustment.
+            recorded_at: Timezone-aware timestamp for the adjustment.
+            description: Human-readable correction description.
+
+        Returns:
+            The immutable adjustment journal.
+        """
         self._journal_for(original_journal_id)
         adjustment = JournalEntry(
             journal_id=journal_id,
@@ -200,8 +229,11 @@ class LedgerRepository:
 
 __all__ = [
     "EntryDirection",
+    "InMemoryLedgerRepository",
     "JournalEntry",
     "LedgerAccountId",
     "LedgerEntry",
     "LedgerRepository",
 ]
+
+LedgerRepository = InMemoryLedgerRepository

@@ -1,6 +1,8 @@
 ---
 id: TASK-API-001
-status: backlog
+status: shipped
+started: 2026-09-12
+completed: 2026-09-12
 requirements:
   - FR-API-001
   - FR-API-002
@@ -18,11 +20,12 @@ web framework, or external service.
 
 ## Acceptance Criteria
 
-- [ ] Define small protocols for group, contribution/cycle, account, ledger, and investment boundaries.
-- [ ] Define stable ID, duplicate, missing-record, immutability, and deterministic-order semantics.
-- [ ] Provide in-memory implementations or adapt existing stores behind the protocols.
-- [ ] Add shared contract tests that run without infrastructure.
-- [ ] Document adapter boundaries for SQL, Django, SQLAlchemy, and other future implementations.
+- [x] Define small protocols for group, member, contribution/cycle, account, ledger, investment, Classic, Governance, and Audit boundaries.
+- [x] Define duplicate, missing-record, deterministic-order, and adapter-boundary semantics.
+- [x] Provide deterministic in-memory implementations for group, member, account, cycle, Classic, Governance, and Audit boundaries.
+- [x] Add focused contract tests that run without infrastructure.
+- [x] Formalize member, Classic, Governance, and Audit protocol boundaries.
+- [x] Document future SQL, Django, SQLAlchemy, and other adapters as external implementations.
 
 ## Planned Changes
 
@@ -40,4 +43,4 @@ uv run mypy src/tontine/repositories
 
 ## Completion Notes
 
-Backlog item. Do not create empty repository modules solely to mirror the BRD tree; add protocols when their aggregate semantics and contract tests are defined.
+Implemented formal group, member, account, cycle, ledger, investment, Classic, Governance, and Audit repository protocols; deterministic in-memory implementations; shared repository contract tests; and adapter-boundary documentation. Database and framework adapters remain outside the core.

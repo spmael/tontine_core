@@ -36,7 +36,17 @@ class ClassicRotation:
         cls,
         active_member_ids: tuple[str, ...],
     ) -> ClassicRotation:
-        """Create a rotation from the current active member order."""
+        """Create a rotation from the current active member order.
+
+        Args:
+            active_member_ids: Ordered, unique active member identifiers.
+
+        Returns:
+            A deterministic immutable rotation.
+
+        Raises:
+            ValueError: If the order is empty, duplicated, or contains blanks.
+        """
         if not active_member_ids:
             raise ValueError("At least one active members is required for rotation.")
         if any(not member_id.strip() for member_id in active_member_ids):
@@ -46,7 +56,14 @@ class ClassicRotation:
         return cls(tuple(active_member_ids))
 
     def recipient_for_cycle(self, cycle_number: int) -> str:
-        """Return the recipient for a one-based cycle number."""
+        """Return the recipient for a one-based cycle number.
+
+        Args:
+            cycle_number: Positive cycle number; values wrap at the end.
+
+        Returns:
+            The member ID selected for the cycle.
+        """
         if cycle_number < 1:
             raise ValueError("Cycle number must be positive.")
         return self.member_ids[(cycle_number - 1) % len(self.member_ids)]
@@ -55,7 +72,14 @@ class ClassicRotation:
         self,
         contributions: dict[str, Decimal | int | str],
     ) -> Decimal:
-        """Return the exact Decimal sum of contributions for the rotation."""
+        """Return the exact Decimal sum of contributions for the rotation.
+
+        Args:
+            contributions: Decimal-compatible amounts keyed by every member ID.
+
+        Returns:
+            The exact unquantized Decimal contribution pool.
+        """
         if set(contributions) != set(self.member_ids):
             raise ValueError("Contributors must match the active rotation members.")
         return sum(

@@ -1,6 +1,8 @@
 ---
 id: CAP-API-001
-status: backlog
+status: shipped
+started: 2026-09-12
+completed: 2026-09-12
 adr_refs: []
 depends_on:
   - CAP-GROUP-001
@@ -34,17 +36,17 @@ external services.
 
 ## Acceptance Criteria
 
-- [ ] Define small repository protocols by aggregate boundary.
-- [ ] Provide in-memory implementations for core repository protocols.
-- [ ] Define missing-ID, duplicate-ID, ordering, immutability, and error semantics.
-- [ ] Run shared contract tests against in-memory implementations.
-- [ ] Expose typed and documented public API entry points.
-- [ ] Keep database, web-framework, authentication, and network adapters outside the domain package.
+- [x] Define small repository protocols by aggregate boundary.
+- [x] Provide in-memory implementations for core repository protocols.
+- [x] Define missing-ID, duplicate-ID, ordering, immutability, and error semantics.
+- [x] Run shared contract tests against in-memory implementations.
+- [x] Expose typed and documented public API entry points.
+- [x] Keep database, web-framework, authentication, and network adapters outside the domain package.
 
 ## Implementation Tasks
 
-- TASK-API-001: Define repository protocols and in-memory contract implementations.
-- TASK-API-002: Define readable public API entry points and documentation examples.
+- [x] TASK-API-001: Define repository protocols and in-memory contract implementations.
+- [x] TASK-API-002: Define readable public API entry points and documentation examples.
 
 ## Verification
 

@@ -105,7 +105,18 @@ class AllocationRuleSchedule:
         effective_cycle: int,
         end_cycle: int | None = None,
     ) -> ScheduledAllocationRule:
-        """Add a recurring or bounded allocation-rule version."""
+        """Add a recurring or bounded allocation-rule version.
+
+        Args:
+            rule_id: Stable allocation-rule identifier.
+            version: Immutable rule version number.
+            rule: Percentage allocation definition totaling 100 percent.
+            effective_cycle: First cycle using the rule.
+            end_cycle: Optional last cycle using the rule.
+
+        Returns:
+            The immutable scheduled rule.
+        """
         if not rule_id.strip() or version < 1:
             raise ValueError("Allocation rule identity is invalid.")
         if effective_cycle < 1 or (
@@ -129,7 +140,16 @@ class AllocationRuleSchedule:
         return scheduled
 
     def cancel(self, rule_id: str, from_cycle: int) -> None:
-        """Stop a recurring rule from a cycle onward without mutating history."""
+        """Stop a recurring rule from a cycle onward without mutating history.
+
+        Args:
+            rule_id: Allocation rule to stop.
+            from_cycle: First cycle in which the rule no longer applies.
+
+        Raises:
+            KeyError: If the rule is not registered.
+            ValueError: If the cancellation cycle is not after activation.
+        """
         if from_cycle < 1:
             raise ValueError("Cancellation cycle must be positive.")
         candidates = [item for item in self._rules if item.rule_id == rule_id]
@@ -152,7 +172,17 @@ class AllocationRuleSchedule:
         self._record_audit("allocation_rule.cancelled", rule_id, current.version)
 
     def rule_for_cycle(self, cycle_number: int) -> ScheduledAllocationRule:
-        """Return the latest applicable rule version for a cycle."""
+        """Return the latest applicable rule version for a cycle.
+
+        Args:
+            cycle_number: Positive contribution cycle number.
+
+        Returns:
+            The latest scheduled rule effective for the cycle.
+
+        Raises:
+            KeyError: If no rule is effective for the cycle.
+        """
         if cycle_number < 1:
             raise ValueError("Allocation cycle must be positive.")
         applicable = [item for item in self._rules if item.applies_to(cycle_number)]
@@ -268,7 +298,24 @@ class InvestmentActivityRegistry:
         recorded_at: datetime,
         source: str,
     ) -> InvestmentActivity:
-        """Record supplied investment activity without executing a transaction."""
+        """Record supplied investment activity without executing a transaction.
+
+        Args:
+            event_id: Unique investment-event identifier.
+            event_type: Purchase, sale, income, or fee category.
+            asset: Asset definition associated with the activity.
+            amount: Non-negative Decimal-compatible amount.
+            currency: ISO 4217 activity currency.
+            effective_date: Date on which the activity occurred.
+            recorded_at: Timezone-aware timestamp when it was recorded.
+            source: Statement or other supplied provenance source.
+
+        Returns:
+            The immutable activity record.
+
+        Raises:
+            DuplicateInvestmentEventError: If the event ID already exists.
+        """
         from tontine.exceptions import DuplicateInvestmentEventError
 
         if event_id in self._activities:
@@ -323,7 +370,14 @@ class InvestmentValuation:
         return self.nav / self.units_outstanding
 
     def member_value(self, units: Decimal | int | str) -> Decimal:
-        """Return the attributable value for supplied member units."""
+        """Return the attributable value for supplied member units.
+
+        Args:
+            units: Non-negative member units in the valuation's unit system.
+
+        Returns:
+            Units multiplied by the unquantized Decimal unit price.
+        """
         return _non_negative(units, "Member units") * self.unit_price
 
 
@@ -341,7 +395,17 @@ class MemberUnitLedger:
         unit_price: Decimal | int | str,
         event_id: str,
     ) -> Decimal:
-        """Issue units from a contribution amount and explicit unit price."""
+        """Issue units from a contribution amount and explicit unit price.
+
+        Args:
+            member_id: Member receiving the units.
+            contribution: Non-negative contribution amount.
+            unit_price: Positive Decimal unit price.
+            event_id: Unique immutable unit-event identifier.
+
+        Returns:
+            The Decimal quantity issued.
+        """
         self._record_event(event_id)
         amount = _non_negative(contribution, "Contribution")
         price = _non_negative(unit_price, "Unit price")
@@ -357,7 +421,16 @@ class MemberUnitLedger:
         units: Decimal | int | str,
         event_id: str,
     ) -> None:
-        """Redeem units without mutating prior unit events."""
+        """Redeem units without mutating prior unit events.
+
+        Args:
+            member_id: Member whose units are redeemed.
+            units: Non-negative units not exceeding the member balance.
+            event_id: Unique immutable redemption-event identifier.
+
+        Raises:
+            ValueError: If units are invalid or exceed the member balance.
+        """
         self._record_event(event_id)
         quantity = _non_negative(units, "Units")
         if quantity > self.balance_for(member_id):

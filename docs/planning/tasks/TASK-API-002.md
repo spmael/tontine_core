@@ -1,6 +1,8 @@
 ---
 id: TASK-API-002
-status: backlog
+status: shipped
+started: 2026-09-12
+completed: 2026-09-12
 requirements:
   - FR-API-001
   - FR-API-003
@@ -19,11 +21,11 @@ contributions, posting financial events, and consuming structured results.
 
 ## Acceptance Criteria
 
-- [ ] Define stable public imports without leaking adapter dependencies.
-- [ ] Add concise Google-style docstrings to public entry points.
-- [ ] Add examples covering classic and investment workflows.
-- [ ] Keep authentication and access-control decisions at the consuming application boundary.
-- [ ] Test public imports and representative end-to-end domain calls without infrastructure.
+- [x] Define stable public imports without leaking adapter dependencies.
+- [x] Add concise Google-style docstrings to public entry points.
+- [x] Add examples covering classic and investment workflows.
+- [x] Keep authentication and access-control decisions at the consuming application boundary.
+- [x] Test public imports and representative end-to-end domain calls without infrastructure.
 
 ## Planned Changes
 
@@ -42,4 +44,4 @@ uv run mypy src
 
 ## Completion Notes
 
-Backlog item. The public API should be shaped after repository protocols and aggregate boundaries are stable.
+Added stable top-level imports and group/cycle creation helpers, public API tests, and a framework-independent Classic/Investment example. Authentication and access control remain application concerns.

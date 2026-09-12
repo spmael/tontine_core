@@ -119,7 +119,20 @@ def build_member_statement(
     investment: InvestmentSummary,
     penalties: Decimal | int | str = Decimal("0"),
 ) -> MemberStatement:
-    """Build a deterministic member statement from supplied domain records."""
+    """Build a deterministic member statement from supplied domain records.
+
+    Args:
+        member_id: Stable member identifier.
+        display_name: Human-readable member name.
+        base_currency: Tontine reporting currency.
+        contributions: Contribution history records.
+        payouts: Historical payout records.
+        investment: Units, ownership, and attributable value summary.
+        penalties: Supplied penalty amount in the reporting currency.
+
+    Returns:
+        An immutable structured statement; no rendering is performed.
+    """
     if not member_id.strip() or not display_name.strip():
         raise ValueError("Member statement identity is required.")
     return MemberStatement(
@@ -176,7 +189,23 @@ def build_group_statement(
     historical_payouts: Sequence[PayoutSummary],
     pending_proposals: Sequence[str],
 ) -> GroupStatement:
-    """Build a deterministic group statement from supplied domain records."""
+    """Build a deterministic group statement from supplied domain records.
+
+    Args:
+        group_id: Stable group identifier.
+        active_member_ids: Members active for the statement period.
+        current_cycle_id: Current cycle identifier, if one exists.
+        expected_contributions: Expected amounts keyed by member ID.
+        received_contributions: Received amounts keyed by member ID.
+        cash_balance: Ledger-derived cash balance in the base currency.
+        investment_value: Investment value in the base currency.
+        liabilities: Ledger-derived liabilities in the base currency.
+        historical_payouts: Recorded payouts.
+        pending_proposals: Governance proposal identifiers awaiting decision.
+
+    Returns:
+        An immutable structured statement; no rendering is performed.
+    """
     if not group_id.strip():
         raise ValueError("Group statement identifier is required.")
     return GroupStatement(

@@ -55,7 +55,24 @@ class AuditEventRegistry:
         source_event: str | None,
         details: Mapping[str, object],
     ) -> AuditEvent:
-        """Record an event without requiring a database or external service."""
+        """Record an event without requiring a database or external service.
+
+        Args:
+            event_id: Unique immutable event identifier.
+            event_type: Stable event category such as ``vote.submitted``.
+            aggregate_type: Domain aggregate category.
+            aggregate_id: Identifier of the affected aggregate.
+            occurred_at: Timezone-aware event timestamp.
+            actor_id: Optional actor responsible for the event.
+            source_event: Optional originating domain-event identifier.
+            details: JSON-like audit details preserved as read-only data.
+
+        Returns:
+            The immutable recorded event.
+
+        Raises:
+            DuplicateAuditEventError: If the event ID is already recorded.
+        """
         if event_id in self._event_ids:
             raise DuplicateAuditEventError(
                 f"Audit event {event_id!r} is already recorded."

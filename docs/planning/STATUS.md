@@ -9,19 +9,19 @@ _Generated from capability and task frontmatter._
 
 ## Summary
 
-- backlog: 6
+- backlog: 3
 - blocked: 0
 - in_progress: 0
 - partial: 0
 - ready: 0
-- shipped: 39
+- shipped: 42
 
 ## Items
 
 | Type | ID | Status | Started | Completed | Owner |
 | --- | --- | --- | --- | --- | --- |
 | capability | CAP-ACCOUNT-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
-| capability | CAP-API-001 | backlog |  |  | package-boundary |
+| capability | CAP-API-001 | shipped | 2026-09-12 | 2026-09-12 | package-boundary |
 | capability | CAP-CLASSIC-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-CON-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-GOV-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
@@ -34,8 +34,8 @@ _Generated from capability and task frontmatter._
 | task | TASK-ACCOUNT-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-ACCOUNT-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-ACCOUNT-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
-| task | TASK-API-001 | backlog |  |  | package-boundary |
-| task | TASK-API-002 | backlog |  |  | package-boundary |
+| task | TASK-API-001 | shipped | 2026-09-12 | 2026-09-12 | package-boundary |
+| task | TASK-API-002 | shipped | 2026-09-12 | 2026-09-12 | package-boundary |
 | task | TASK-CLASSIC-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-CLASSIC-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-CLASSIC-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
