@@ -60,7 +60,16 @@ class Member:
         display_name: str,
         role: MemberRole,
     ) -> Member:
-        """Create a member in invited status for later activation."""
+        """Create a member in invited status for later activation.
+
+        Args:
+            member_id: Non-empty identifier without whitespace.
+            display_name: Human-readable member name.
+            role: Explicit role within the tontine.
+
+        Returns:
+            A member in ``invited`` status.
+        """
         return cls(
             member_id=member_id,
             display_name=display_name,
@@ -106,4 +115,5 @@ class Member:
             f"role={self.role.value!r}, status={self.status.value!r})"
         )
 
-    __all__ = ["Member", "MemberId", "MemberRole", "MembershipStatus"]
+
+__all__ = ["Member", "MemberId", "MemberRole", "MembershipStatus"]

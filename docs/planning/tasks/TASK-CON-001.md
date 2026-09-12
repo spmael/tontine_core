@@ -1,6 +1,8 @@
 ---
 id: TASK-CON-001
-status: ready
+status: shipped
+started: 2026-09-12
+completed: 2026-09-12
 requirements:
   - FR-CON-001
   - FR-CON-002
@@ -12,16 +14,16 @@ owner: domain
 
 ## Goal
 
-Define the monthly contribution rule and cycle entities using exact monetary
+Define the daily, weekly, and monthly contribution rules and cycle entities using exact monetary
 values and explicit dates.
 
 ## Acceptance Criteria
 
-- [ ] Contribution amounts use `decimal.Decimal`.
-- [ ] A rule requires amount, currency, frequency, due-date convention, grace period, and effective date.
-- [ ] A cycle has an explicit status and due date.
-- [ ] Invalid or negative amounts are rejected.
-- [ ] Unit tests cover JPY 30,000 monthly contributions.
+- [x] Contribution amounts use `decimal.Decimal`.
+- [x] A rule requires amount, currency, frequency (`daily`, `weekly`, or `monthly`), due-date convention, grace period, effective date, and IANA timezone.
+- [x] A cycle has an explicit status and due date.
+- [x] Invalid or negative amounts are rejected.
+- [x] Unit tests cover JPY 30,000 daily, monthly, and weekly contribution rules.
 
 ## Planned Changes
 
@@ -36,4 +38,4 @@ python -m pytest tests/contributions
 
 ## Completion Notes
 
-Not started.
+Implemented daily, weekly, and monthly contribution frequency choices with explicit due-date conventions and IANA timezone validation. Cycle timestamps require timezone-aware datetimes and are classified using the cycle's local calendar date.

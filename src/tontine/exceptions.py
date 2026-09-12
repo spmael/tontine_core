@@ -17,5 +17,9 @@ class DuplicateGroupError(TontineError):
     """Raised when a tontine identifier is reused within the repository."""
 
 
+class DuplicateContributionError(TontineError):
+    """Raised when a contribution is recorded more than once without adjustment."""
+
+
 class InvalidMembershipTransitionError(TontineError):
     """Raised when a membership status transition is not permitted."""

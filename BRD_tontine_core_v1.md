@@ -294,6 +294,8 @@ Minimum requirements:
 
 Version 1 should initially support:
 
+- daily contributions;
+- weekly contributions;
 - monthly contributions.
 
 The internal design should allow additional frequencies later.

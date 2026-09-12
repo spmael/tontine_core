@@ -70,8 +70,8 @@ implementing application authentication.
 ### FR-CON-001 - Define contribution rules
 
 The package must define amount, currency, frequency, due-date convention, grace
-period, optional late penalty, and effective date. Monthly contributions are the
-initial supported frequency.
+period, optional late penalty, and effective date. Daily, weekly, and monthly
+contributions are the initial supported frequencies.
 
 ### FR-CON-002 - Create contribution cycles
 

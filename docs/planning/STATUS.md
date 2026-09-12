@@ -9,26 +9,27 @@ _Generated from capability and task frontmatter._
 
 ## Summary
 
-- backlog: 5
+- backlog: 4
 - blocked: 0
 - in_progress: 0
 - partial: 0
-- ready: 2
-- shipped: 8
+- ready: 0
+- shipped: 12
 
 ## Items
 
 | Type | ID | Status | Started | Completed | Owner |
 | --- | --- | --- | --- | --- | --- |
 | capability | CAP-ACCOUNT-001 | backlog |  |  | domain |
-| capability | CAP-CON-001 | ready |  |  | domain |
+| capability | CAP-CON-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-GROUP-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-PACKAGE-001 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
 | task | TASK-ACCOUNT-001 | backlog |  |  | domain |
 | task | TASK-ACCOUNT-002 | backlog |  |  | domain |
 | task | TASK-ACCOUNT-003 | backlog |  |  | domain |
-| task | TASK-CON-001 | ready |  |  | domain |
-| task | TASK-CON-002 | backlog |  |  | domain |
+| task | TASK-CON-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
+| task | TASK-CON-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
+| task | TASK-CON-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-GROUP-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-GROUP-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-GROUP-003 | shipped | 2026-09-12 | 2026-09-12 | domain |

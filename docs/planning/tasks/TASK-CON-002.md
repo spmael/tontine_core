@@ -1,6 +1,8 @@
 ---
 id: TASK-CON-002
-status: backlog
+status: shipped
+started: 2026-09-12
+completed: 2026-09-12
 requirements:
   - FR-CON-003
   - FR-CON-004
@@ -19,11 +21,11 @@ Record contributions and derive their status without processing external payment
 
 ## Acceptance Criteria
 
-- [ ] Record member, cycle, expected amount, actual amount, payment date, status, reference, and notes.
-- [ ] Derive pending, paid, partial, late, and missed states deterministically.
-- [ ] Report expected, received, and outstanding amounts with `Decimal` arithmetic.
-- [ ] Reject duplicate records unless an explicit adjustment is used.
-- [ ] Add tests for the first vertical slice scenario.
+- [x] Record member, cycle, expected amount, actual amount, payment date, status, reference, and notes.
+- [x] Derive pending, paid, partial, late, and missed states deterministically.
+- [x] Report expected, received, and outstanding amounts with `Decimal` arithmetic.
+- [x] Reject duplicate records unless an explicit adjustment is used.
+- [x] Add tests for the first vertical slice scenario.
 
 ## Planned Changes
 
@@ -38,4 +40,4 @@ python -m pytest tests/contributions
 
 ## Completion Notes
 
-Not started.
+Contribution records now classify payment states from explicit timezone-aware timestamps, reject duplicate records unless adjusted explicitly, and expose Decimal-based expected, received, and outstanding totals.

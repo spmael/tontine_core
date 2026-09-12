@@ -86,7 +86,16 @@ class Group:
         name: str,
         base_currency: str,
     ) -> Group:
-        """Create a new tontine in draft status with valid currency metadata."""
+        """Create a draft group with validated identity and currency metadata.
+
+        Args:
+            group_id: Non-empty identifier without whitespace.
+            name: Display name for the group.
+            base_currency: Supported three-letter currency code.
+
+        Returns:
+            A group in ``draft`` status.
+        """
         return cls(
             group_id=GroupId(group_id),
             name=name,
@@ -95,7 +104,11 @@ class Group:
         )
 
     def add_member(self, member: Member) -> None:
-        """Attach a member to the group while enforcing unique identifiers."""
+        """Attach a member while enforcing unique member identifiers.
+
+        Raises:
+            DuplicateMemberError: If the member is already attached.
+        """
         if member.member_id in self.members:
             raise DuplicateMemberError(
                 f"Member {member.member_id!r} is already present in this tontine."
@@ -116,7 +129,11 @@ class GroupRepository:
         self._groups: dict[str, Group] = {}
 
     def add_group(self, group: Group) -> None:
-        """Store a group keyed by its domain identifier."""
+        """Store a group keyed by its domain identifier.
+
+        Raises:
+            DuplicateGroupError: If the group identifier is already stored.
+        """
         if group.group_id in self._groups:
             raise DuplicateGroupError(
                 f"Group {group.group_id!r} is already registered in the repository."
@@ -124,7 +141,11 @@ class GroupRepository:
         self._groups[group.group_id] = group
 
     def get_group(self, group_id: str) -> Group:
-        """Fetch a group by its identifier."""
+        """Fetch a group by its identifier.
+
+        Raises:
+            KeyError: If no group has the requested identifier.
+        """
         try:
             return self._groups[group_id]
         except KeyError as exc:
