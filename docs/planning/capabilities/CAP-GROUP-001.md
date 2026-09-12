@@ -1,6 +1,13 @@
 ---
 id: CAP-GROUP-001
-status: ready
+status: shipped
+started: 2026-09-12
+completed: 2026-09-12
+adr_refs: []
+depends_on:
+  - CAP-PACKAGE-001
+blocks:
+  - CAP-CON-001
 requirements:
   - FR-GRP-001
   - FR-GRP-002
@@ -25,14 +32,14 @@ validated domain operations.
 
 ## Acceptance Criteria
 
-- [ ] Create a draft tontine with a valid ISO currency code.
-- [ ] Add members with unique identifiers and explicit roles.
-- [ ] Reject duplicate member identifiers.
-- [ ] Enforce valid membership status transitions.
-- [ ] Expose deterministic, framework-independent domain behavior.
+- [x] Create a draft tontine with a valid ISO currency code.
+- [x] Add members with unique identifiers and explicit roles.
+- [x] Reject duplicate member identifiers.
+- [x] Enforce valid membership status transitions.
+- [x] Expose deterministic, framework-independent domain behavior.
 
 ## Implementation Tasks
 
-- TASK-GROUP-001: Define identifiers, statuses, roles, and value objects.
-- TASK-GROUP-002: Implement tontine and member domain entities.
-- TASK-GROUP-003: Add in-memory repository behavior and tests.
+- [x] TASK-GROUP-001: Define identifiers, statuses, roles, and value objects.
+- [x] TASK-GROUP-002: Implement tontine and member domain entities.
+- [x] TASK-GROUP-003: Add in-memory repository behavior and tests.

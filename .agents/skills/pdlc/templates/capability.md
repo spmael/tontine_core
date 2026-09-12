@@ -4,6 +4,8 @@ status: backlog
 started: null
 completed: null
 adr_refs: []
+depends_on: []
+blocks: []
 requirements:
   - FR-TEMPLATE-001
 owner: <owner>

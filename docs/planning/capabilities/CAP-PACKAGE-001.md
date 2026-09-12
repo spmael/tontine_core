@@ -3,6 +3,12 @@ id: CAP-PACKAGE-001
 status: shipped
 started: 2026-09-12
 completed: 2026-09-12
+adr_refs: []
+depends_on: []
+blocks:
+  - CAP-GROUP-001
+  - CAP-CON-001
+  - CAP-ACCOUNT-001
 requirements:
   - FR-PKG-001
   - NFR-PKG-001

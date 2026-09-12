@@ -1,6 +1,11 @@
 ---
 id: CAP-CON-001
 status: ready
+adr_refs: []
+depends_on:
+  - CAP-PACKAGE-001
+  - CAP-GROUP-001
+blocks: []
 requirements:
   - FR-CON-001
   - FR-CON-002

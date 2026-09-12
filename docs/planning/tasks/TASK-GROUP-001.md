@@ -1,6 +1,8 @@
 ---
 id: TASK-GROUP-001
-status: ready
+status: shipped
+started: 2026-09-12
+completed: 2026-09-12
 requirements:
   - FR-GRP-001
   - FR-GRP-002
@@ -19,10 +21,10 @@ exceptions needed by group and membership behavior.
 
 ## Acceptance Criteria
 
-- [ ] Group, member, role, and membership status values are explicit and typed.
-- [ ] Invalid currency or identifier values produce domain errors.
-- [ ] Public types have concise docstrings.
-- [ ] Unit tests cover valid and invalid values.
+- [x] Group, member, role, and membership status values are explicit and typed.
+- [x] Invalid currency or identifier values produce domain errors.
+- [x] Public types have concise docstrings.
+- [x] Unit tests cover valid and invalid values.
 
 ## Planned Changes
 
@@ -35,9 +37,9 @@ exceptions needed by group and membership behavior.
 ## Validation
 
 ```text
-python -m pytest tests/groups tests/members
+uv run pytest tests/groups tests/members
 ```
 
 ## Completion Notes
 
-Not started.
+The explicit group/member vocabulary and status transitions were implemented in the domain layer, and the new tests confirm valid draft creation, duplicate rejection, currency validation, and allowed membership transitions.

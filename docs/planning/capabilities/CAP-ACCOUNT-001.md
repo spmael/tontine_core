@@ -1,6 +1,10 @@
 ---
 id: CAP-ACCOUNT-001
 status: backlog
+adr_refs: []
+depends_on:
+  - CAP-PACKAGE-001
+blocks: []
 requirements:
   - FR-ACC-001
   - FR-ACC-002
