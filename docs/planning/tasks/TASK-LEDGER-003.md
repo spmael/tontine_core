@@ -1,6 +1,6 @@
 ---
 id: TASK-LEDGER-003
-status: in_progress
+status: shipped
 started: 2026-09-12
 completed: 2026-09-12
 requirements:

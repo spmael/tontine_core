@@ -25,6 +25,18 @@ domain capability, not by web application or framework.
 - Use the bundled status roller to regenerate `docs/planning/STATUS.md` from
   capability and task frontmatter.
 
+## Repository and Protocol Formalization Checklist
+
+Before marking persistence or public-API work `shipped`, verify:
+
+- [ ] Aggregate ownership and stable identifiers are explicit.
+- [ ] Repository protocols expose only required domain operations.
+- [ ] Missing-record, duplicate-record, immutability, ordering, and error semantics are documented.
+- [ ] In-memory implementations satisfy shared repository contract tests without infrastructure.
+- [ ] Database, web-framework, authentication, and network adapters remain outside the core domain package.
+- [ ] Public imports and Google-style docstrings are tested.
+- [ ] Completion evidence names the protocol, implementation, contract tests, and adapter boundary.
+
 ## Recommended structure
 
 ```text
