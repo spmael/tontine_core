@@ -37,5 +37,9 @@ class DuplicateJournalError(TontineError):
     """Raised when a journal identifier is posted more than once."""
 
 
+class DuplicatePayoutError(TontineError):
+    """Raised when a classic cycle receives more than one payout."""
+
+
 class InvalidMembershipTransitionError(TontineError):
     """Raised when a membership status transition is not permitted."""
