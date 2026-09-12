@@ -49,6 +49,7 @@ without broker access or investment execution.
 - [x] TASK-INV-003: Calculate NAV, unit price, and member ownership.
 - [x] TASK-INV-004: Implement deterministic member-unit issuance and redemption.
 - [x] TASK-INV-005: Add external FX adapter boundary and multi-currency tests.
+- [x] TASK-INV-006: Automatically carry allocation rules across cycles.
 
 ## Verification
 

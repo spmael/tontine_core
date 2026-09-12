@@ -32,6 +32,14 @@ import tontine
 The core package is framework-independent and has no runtime dependency on a
 database, web framework, payment provider, or financial institution.
 
+## Structured Reporting
+
+Reporting APIs expose structured member and group statement data, including
+contribution history, outstanding amounts, payouts, investment units, ownership,
+cash, investments, liabilities, NAV, and proposals. For example, a consumer can
+use a `MemberStatement` as the source for a web view or export. PDF, Excel, HTML,
+and web rendering remain application-layer responsibilities.
+
 ## Financial Account Registry
 
 The account registry records external custody context only. For example, a bank

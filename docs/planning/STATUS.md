@@ -14,7 +14,7 @@ _Generated from capability and task frontmatter._
 - in_progress: 0
 - partial: 0
 - ready: 0
-- shipped: 33
+- shipped: 39
 
 ## Items
 
@@ -30,6 +30,7 @@ _Generated from capability and task frontmatter._
 | capability | CAP-LEDGER-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-LOCATION-001 | backlog |  |  | domain |
 | capability | CAP-PACKAGE-001 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
+| capability | CAP-REPORT-001 | shipped | 2026-09-12 | 2026-09-12 | reporting |
 | task | TASK-ACCOUNT-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-ACCOUNT-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-ACCOUNT-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
@@ -52,6 +53,7 @@ _Generated from capability and task frontmatter._
 | task | TASK-INV-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-INV-004 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-INV-005 | shipped | 2026-09-12 | 2026-09-12 | domain |
+| task | TASK-INV-006 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-LEDGER-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-LEDGER-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-LEDGER-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
@@ -59,6 +61,10 @@ _Generated from capability and task frontmatter._
 | task | TASK-PACKAGE-001 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
 | task | TASK-PACKAGE-002 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
 | task | TASK-PACKAGE-003 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
+| task | TASK-REPORT-001 | shipped | 2026-09-12 | 2026-09-12 | reporting |
+| task | TASK-REPORT-002 | shipped | 2026-09-12 | 2026-09-12 | reporting |
+| task | TASK-REPORT-003 | shipped | 2026-09-12 | 2026-09-12 | reporting |
+| task | TASK-REPORT-004 | shipped | 2026-09-12 | 2026-09-12 | reporting |
 
 ## Evidence Checks
 

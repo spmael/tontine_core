@@ -8,6 +8,7 @@ from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from typing import Protocol
 
+from tontine.audit import AuditEventRegistry
 from tontine.currencies import CurrencyCode
 
 
@@ -64,6 +65,115 @@ class AllocationRule:
     def total_percentage(self) -> Decimal:
         """Return the exact Decimal percentage total."""
         return sum(self.categories.values(), Decimal("0"))
+
+
+@dataclass(frozen=True)
+class ScheduledAllocationRule:
+    """Immutable allocation-rule version with an effective cycle range."""
+
+    rule_id: str
+    version: int
+    rule: AllocationRule
+    effective_cycle: int
+    end_cycle: int | None = None
+    cancelled_from_cycle: int | None = None
+
+    def applies_to(self, cycle_number: int) -> bool:
+        """Return whether this rule version applies to a cycle."""
+        return (
+            self.effective_cycle <= cycle_number
+            and (self.end_cycle is None or cycle_number <= self.end_cycle)
+            and (
+                self.cancelled_from_cycle is None
+                or cycle_number < self.cancelled_from_cycle
+            )
+        )
+
+
+class AllocationRuleSchedule:
+    """Resolve recurring, ended, cancelled, and replaced allocation rules."""
+
+    def __init__(self, audit_registry: AuditEventRegistry | None = None) -> None:
+        self._rules: list[ScheduledAllocationRule] = []
+        self._audit_registry = audit_registry
+
+    def add_rule(
+        self,
+        rule_id: str,
+        version: int,
+        rule: AllocationRule,
+        effective_cycle: int,
+        end_cycle: int | None = None,
+    ) -> ScheduledAllocationRule:
+        """Add a recurring or bounded allocation-rule version."""
+        if not rule_id.strip() or version < 1:
+            raise ValueError("Allocation rule identity is invalid.")
+        if effective_cycle < 1 or (
+            end_cycle is not None and end_cycle < effective_cycle
+        ):
+            raise ValueError("Allocation rule cycle range is invalid.")
+        if any(
+            item.rule_id == rule_id and item.version == version
+            for item in self._rules
+        ):
+            raise ValueError(f"Allocation rule {rule_id!r} is already registered.")
+        scheduled = ScheduledAllocationRule(
+            rule_id=rule_id,
+            version=version,
+            rule=rule,
+            effective_cycle=effective_cycle,
+            end_cycle=end_cycle,
+        )
+        self._rules.append(scheduled)
+        self._record_audit("allocation_rule.added", rule_id, version)
+        return scheduled
+
+    def cancel(self, rule_id: str, from_cycle: int) -> None:
+        """Stop a recurring rule from a cycle onward without mutating history."""
+        if from_cycle < 1:
+            raise ValueError("Cancellation cycle must be positive.")
+        candidates = [item for item in self._rules if item.rule_id == rule_id]
+        if not candidates:
+            raise KeyError(f"Allocation rule {rule_id!r} was not found.")
+        current = max(candidates, key=lambda item: item.effective_cycle)
+        if from_cycle <= current.effective_cycle:
+            raise ValueError("Cancellation must occur after the rule effective cycle.")
+        self._rules.remove(current)
+        self._rules.append(
+            ScheduledAllocationRule(
+                rule_id=current.rule_id,
+                version=current.version,
+                rule=current.rule,
+                effective_cycle=current.effective_cycle,
+                end_cycle=current.end_cycle,
+                cancelled_from_cycle=from_cycle,
+            )
+        )
+        self._record_audit("allocation_rule.cancelled", rule_id, current.version)
+
+    def rule_for_cycle(self, cycle_number: int) -> ScheduledAllocationRule:
+        """Return the latest applicable rule version for a cycle."""
+        if cycle_number < 1:
+            raise ValueError("Allocation cycle must be positive.")
+        applicable = [item for item in self._rules if item.applies_to(cycle_number)]
+        if not applicable:
+            raise KeyError(f"No allocation rule is effective for cycle {cycle_number}.")
+        return max(applicable, key=lambda item: item.effective_cycle)
+
+    def _record_audit(self, event_type: str, rule_id: str, version: int) -> None:
+        if self._audit_registry is None:
+            return
+        event_number = len(self._audit_registry.all_events()) + 1
+        self._audit_registry.record(
+            event_id=f"{event_type}:{rule_id}:{version}:{event_number}",
+            event_type=event_type,
+            aggregate_type="allocation_rule",
+            aggregate_id=rule_id,
+            occurred_at=datetime.now().astimezone(),
+            actor_id=None,
+            source_event=None,
+            details={"version": version},
+        )
 
 
 @dataclass(frozen=True)
@@ -320,6 +430,7 @@ def is_rate_current(rate: FxRate, as_of: datetime, max_age: timedelta) -> bool:
 
 __all__ = [
     "AllocationRule",
+    "AllocationRuleSchedule",
     "AssetCategory",
     "AssetDefinition",
     "FxRate",
@@ -330,5 +441,6 @@ __all__ = [
     "InvestmentValuation",
     "ManualValuation",
     "MemberUnitLedger",
+    "ScheduledAllocationRule",
     "is_rate_current",
 ]
