@@ -33,5 +33,9 @@ class InvalidCountryError(TontineError):
     """Raised when a country code is not a known ISO 3166-1 alpha-2 code."""
 
 
+class DuplicateJournalError(TontineError):
+    """Raised when a journal identifier is posted more than once."""
+
+
 class InvalidMembershipTransitionError(TontineError):
     """Raised when a membership status transition is not permitted."""
