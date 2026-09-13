@@ -156,7 +156,7 @@ Investment assets and activities use explicit currencies and manually supplied
 provenance. Supported activity categories are purchase, sale, income, and fee.
 Manual valuations require a non-negative value, effective date, and source.
 
-Member unit balances are derived from issue and redemption events. Unit prices
+Member unit balances are maintained by issue and redemption operations. Unit prices
 must be positive for issuance, redemption cannot exceed a member balance, and
 duplicate unit event identifiers are rejected.
 
