@@ -85,3 +85,24 @@ def test_activity_is_immutable_and_duplicate_events_are_rejected() -> None:
         activity.amount = Decimal("1")  # type: ignore[misc]
     with pytest.raises(DuplicateInvestmentEventError):
         registry.record_activity(**arguments)
+
+
+def test_activity_rejects_invalid_identifiers_amounts_and_timestamps() -> None:
+    asset = AssetDefinition("bond-1", "Bond", AssetCategory.BOND, "XAF")
+    arguments = {
+        "event_id": "event-1",
+        "event_type": "purchase",
+        "asset": asset,
+        "amount": Decimal("1"),
+        "currency": "XAF",
+        "effective_date": date(2027, 1, 1),
+        "recorded_at": datetime(2027, 1, 1, tzinfo=UTC),
+        "source": "statement",
+    }
+    registry = InvestmentActivityRegistry()
+    with pytest.raises(ValueError, match="identifier"):
+        registry.record_activity(**{**arguments, "event_id": " "})
+    with pytest.raises(ValueError, match="non-negative"):
+        registry.record_activity(**{**arguments, "amount": Decimal("-1")})
+    with pytest.raises(ValueError, match="timezone-aware"):
+        registry.record_activity(**{**arguments, "recorded_at": datetime(2027, 1, 1)})

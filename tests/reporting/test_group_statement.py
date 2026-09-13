@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+import pytest
+
 from tontine.reporting import PayoutSummary, build_group_statement
 
 
@@ -47,3 +49,25 @@ def test_empty_group_statement_is_deterministic() -> None:
 
     assert statement.outstanding_contributions == Decimal("0")
     assert statement.nav == Decimal("0")
+
+
+def test_group_statement_rejects_blank_identity_and_invalid_amounts() -> None:
+    arguments = {
+        "group_id": "group-1",
+        "base_currency": "JPY",
+        "active_member_ids": (),
+        "current_cycle_id": None,
+        "expected_contributions": {},
+        "received_contributions": {},
+        "cash_balance": Decimal("0"),
+        "investment_value": Decimal("0"),
+        "liabilities": Decimal("0"),
+        "historical_payouts": (),
+        "pending_proposals": (),
+    }
+    with pytest.raises(ValueError, match="identifier"):
+        build_group_statement(**{**arguments, "group_id": " "})
+    with pytest.raises(ValueError, match="non-negative"):
+        build_group_statement(**{**arguments, "cash_balance": Decimal("-1")})
+    with pytest.raises(TypeError, match="Decimal-compatible"):
+        build_group_statement(**{**arguments, "investment_value": 1.5})

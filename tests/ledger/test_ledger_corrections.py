@@ -77,3 +77,14 @@ def test_adjustment_is_explicit_and_traceable() -> None:
     assert adjustment.source_event == "adjustment:journal-001"
     assert adjustment.reference == "journal-001"
     assert repository.balance_for("cash-xaf", "XAF") == Decimal("150100")
+
+
+def test_reversal_and_adjustment_require_existing_journals() -> None:
+    repository = LedgerRepository()
+    timestamp = datetime(2027, 1, 20, 12, 0, tzinfo=UTC)
+
+    with pytest.raises(KeyError, match="not found"):
+        repository.reverse("reversal", "missing", timestamp)
+
+    with pytest.raises(KeyError, match="not found"):
+        repository.adjust("adjustment", "missing", (), timestamp, "Correction")

@@ -104,3 +104,53 @@ def test_non_cash_accounts_reject_unknown_iso_country_codes() -> None:
             currency="USD",
             masked_reference="****1234",
         )
+
+
+def test_rejects_missing_account_identity_and_reference() -> None:
+    with pytest.raises(ValueError, match="identifier"):
+        FinancialAccount(
+            account_id=" ",
+            display_name="Cash account",
+            account_type="cash",
+            currency="USD",
+            masked_reference="****1234",
+        )
+
+    with pytest.raises(ValueError, match="display name"):
+        FinancialAccount(
+            account_id="account-1",
+            display_name=" ",
+            account_type="cash",
+            currency="USD",
+            masked_reference="****1234",
+        )
+
+    with pytest.raises(UnsafeAccountReferenceError, match="required"):
+        FinancialAccount(
+            account_id="account-2",
+            display_name="Cash account",
+            account_type="cash",
+            currency="USD",
+            masked_reference=" ",
+        )
+
+    with pytest.raises(UnsafeAccountReferenceError, match="mask marker"):
+        FinancialAccount(
+            account_id="account-3",
+            display_name="Cash account",
+            account_type="cash",
+            currency="USD",
+            masked_reference="account-reference",
+        )
+
+
+def test_institutional_accounts_require_country() -> None:
+    with pytest.raises(ValueError, match="country"):
+        FinancialAccount(
+            account_id="account-4",
+            display_name="Broker account",
+            account_type="broker",
+            institution_name="Example Broker",
+            currency="USD",
+            masked_reference="****1234",
+        )

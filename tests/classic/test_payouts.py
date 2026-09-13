@@ -51,3 +51,27 @@ def test_rejects_duplicate_payout_for_cycle() -> None:
             recorded_at=datetime(2027, 1, 15, 12, 0, tzinfo=UTC),
             source_event="payout-002",
         )
+
+
+def test_rejects_invalid_payout_fields() -> None:
+    invalid_payouts = (
+        {"cycle_number": 0},
+        {"recipient_id": " "},
+        {"source_event": " "},
+        {"recorded_at": datetime(2027, 1, 15, 12, 0)},
+        {"amount": Decimal("-1")},
+    )
+
+    for invalid_fields in invalid_payouts:
+        fields = {
+            "cycle_number": 1,
+            "recipient_id": "member-a",
+            "amount": Decimal("150000"),
+            "currency": "JPY",
+            "recorded_at": datetime(2027, 1, 15, 12, 0, tzinfo=UTC),
+            "source_event": "payout-001",
+        }
+        fields.update(invalid_fields)
+
+        with pytest.raises(ValueError):
+            ClassicPayout(**fields)

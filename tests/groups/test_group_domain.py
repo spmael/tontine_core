@@ -33,6 +33,21 @@ def test_reject_invalid_currency_code() -> None:
         Group.create_draft(group_id="grp-002", name="Bad Group", base_currency="XYZ")
 
 
+def test_reject_invalid_group_identity() -> None:
+    """Group identifiers and names must contain usable values."""
+    with pytest.raises(ValueError, match="identifier"):
+        Group.create_draft(group_id=" ", name="Group", base_currency="JPY")
+
+    with pytest.raises(ValueError, match="whitespace"):
+        Group.create_draft(group_id="group 002", name="Group", base_currency="JPY")
+
+    with pytest.raises(ValueError, match="name"):
+        Group.create_draft(group_id="grp-002", name=" ", base_currency="JPY")
+
+    with pytest.raises(ValueError, match="identifier"):
+        Group.create_draft(group_id="", name="Group", base_currency="JPY")
+
+
 def test_add_members_with_unique_identifiers_and_roles() -> None:
     """New members are keyed by identifier and track explicit roles and states."""
     group = Group.create_draft(group_id="grp-003", name="Members", base_currency="JPY")

@@ -26,3 +26,6 @@ def test_cycle_repository_lists_cycles_deterministically() -> None:
 
     with pytest.raises(ValueError, match="already"):
         repository.add(cycle("cycle-a"))
+
+    with pytest.raises(KeyError, match="not found"):
+        repository.get("missing")

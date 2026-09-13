@@ -42,3 +42,25 @@ def test_rotation_rejects_unknown_contributors_and_negative_amounts() -> None:
         rotation.expected_payout(
             {"member-a": Decimal("30000"), "member-b": Decimal("-1")}
         )
+
+
+def test_rotation_rejects_blank_members_and_non_positive_cycles() -> None:
+    with pytest.raises(ValueError, match="non-empty"):
+        ClassicRotation.from_active_members(("member-a", " "))
+
+    rotation = ClassicRotation.from_active_members(("member-a",))
+    with pytest.raises(ValueError, match="positive"):
+        rotation.recipient_for_cycle(0)
+
+
+def test_rotation_rejects_invalid_payout_amounts() -> None:
+    rotation = ClassicRotation.from_active_members(("member-a",))
+
+    with pytest.raises(TypeError, match="Decimal-compatible"):
+        rotation.expected_payout({"member-a": 1.5})
+
+    with pytest.raises(ValueError, match="valid decimal"):
+        rotation.expected_payout({"member-a": "not-a-number"})
+
+    with pytest.raises(ValueError, match="finite"):
+        rotation.expected_payout({"member-a": "NaN"})

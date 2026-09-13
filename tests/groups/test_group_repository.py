@@ -38,3 +38,15 @@ def test_repository_rejects_duplicate_group_identifiers() -> None:
 
     with pytest.raises(DuplicateGroupError):
         repo.add_group(Group.create_draft("grp-300", "Duplicate", "XOF"))
+
+
+def test_repository_rejects_missing_groups_and_members() -> None:
+    """Repository lookups report missing group and member records clearly."""
+    repo = GroupRepository()
+
+    with pytest.raises(KeyError, match="not found"):
+        repo.get_group("missing")
+
+    repo.add_group(Group.create_draft("grp-301", "Lookup Group", "XOF"))
+    with pytest.raises(KeyError, match="Member"):
+        repo.get_member("grp-301", "missing")

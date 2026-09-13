@@ -57,3 +57,16 @@ def test_schedule_rejects_duplicate_versions_and_invalid_effective_cycles() -> N
         schedule.add_rule("allocation-v1", 1, rule("20"), effective_cycle=2)
     with pytest.raises(ValueError, match="cycle"):
         schedule.add_rule("allocation-v2", 1, rule("20"), effective_cycle=0)
+
+    with pytest.raises(ValueError, match="identity"):
+        schedule.add_rule(" ", 1, rule("20"), effective_cycle=1)
+    with pytest.raises(ValueError, match="cycle"):
+        schedule.add_rule("allocation-v3", 1, rule("20"), effective_cycle=3, end_cycle=2)
+    with pytest.raises(ValueError, match="positive"):
+        schedule.rule_for_cycle(0)
+    with pytest.raises(KeyError, match="not found"):
+        schedule.cancel("missing", 2)
+    with pytest.raises(ValueError, match="positive"):
+        schedule.cancel("allocation-v1", 0)
+    with pytest.raises(ValueError, match="after"):
+        schedule.cancel("allocation-v1", 1)

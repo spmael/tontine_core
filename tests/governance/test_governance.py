@@ -98,6 +98,59 @@ def test_governance_rejects_duplicate_and_ineligible_votes(
         governance.vote("proposal-1", "member-x", VoteChoice.YES)
 
 
+def test_governance_rejects_invalid_proposal_lifecycle_and_missing_ids(
+    governance: GovernanceRegistry,
+) -> None:
+    with pytest.raises(KeyError, match="not found"):
+        governance.open_proposal("missing")
+    with pytest.raises(ValueError, match="active members"):
+        GovernanceRegistry((), ClassicRotation.from_active_members(("member-a",)))
+
+    arguments = {
+        "proposal_id": "proposal-invalid",
+        "title": "Invalid",
+        "description": "Invalid proposal",
+        "proposer_id": "member-a",
+        "rotation_order": ("member-a", "member-b", "member-c", "member-d", "member-e"),
+        "approval_threshold": Decimal("60"),
+        "effective_cycle": 2,
+        "created_at": datetime(2027, 1, 2, tzinfo=UTC),
+        "voting_deadline": datetime(2027, 1, 3, tzinfo=UTC),
+    }
+    governance.create_rotation_proposal(**arguments)
+    with pytest.raises(ValueError, match="already exists"):
+        governance.create_rotation_proposal(**arguments)
+    with pytest.raises(ValueError, match="open"):
+        governance.vote("proposal-invalid", "member-a", VoteChoice.YES)
+    governance.open_proposal("proposal-invalid")
+    with pytest.raises(ValueError, match="open"):
+        governance.open_proposal("proposal-invalid")
+
+
+def test_governance_rejects_invalid_proposal_inputs(governance: GovernanceRegistry) -> None:
+    base = {
+        "proposal_id": "proposal-invalid",
+        "title": "Invalid",
+        "description": "Invalid proposal",
+        "proposer_id": "member-a",
+        "rotation_order": ("member-a", "member-b", "member-c", "member-d", "member-e"),
+        "approval_threshold": Decimal("60"),
+        "effective_cycle": 2,
+        "created_at": datetime(2027, 1, 2, tzinfo=UTC),
+        "voting_deadline": datetime(2027, 1, 3, tzinfo=UTC),
+    }
+    with pytest.raises(ValueError, match="eligible"):
+        governance.create_rotation_proposal(**{**base, "proposer_id": "missing"})
+    with pytest.raises(ValueError, match="timezone-aware"):
+        governance.create_rotation_proposal(
+            **{**base, "created_at": datetime(2027, 1, 2)}
+        )
+    with pytest.raises(ValueError, match="cycle and dates"):
+        governance.create_rotation_proposal(
+            **{**base, "effective_cycle": 0}
+        )
+
+
 def test_rotation_proposal_rejects_invalid_threshold_and_order(
     governance: GovernanceRegistry,
 ) -> None:
@@ -140,3 +193,13 @@ def test_rulesets_are_versioned_by_effective_cycle(
             created_at=datetime(2027, 1, 1, tzinfo=UTC),
             voting_deadline=datetime(2027, 1, 15, tzinfo=UTC),
         )
+
+    empty_governance = GovernanceRegistry(
+        ("member-a",), ClassicRotation.from_active_members(("member-a",))
+    )
+    with pytest.raises(KeyError, match="No ruleset"):
+        empty_governance.ruleset_for_cycle(1)
+    with pytest.raises(ValueError, match="identifier"):
+        Ruleset("", 1, 1, {})
+    with pytest.raises(ValueError, match="positive"):
+        Ruleset("rules-invalid", 0, 1, {})

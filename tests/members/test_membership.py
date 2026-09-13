@@ -26,3 +26,34 @@ def test_invalid_transition_is_rejected() -> None:
     member.activate()
     with pytest.raises(InvalidMembershipTransitionError):
         member.remove()
+
+
+def test_reject_invalid_member_identity() -> None:
+    """Member identifiers and display names must contain usable values."""
+    with pytest.raises(ValueError, match="identifier"):
+        Member.create(" ", "Dana", MemberRole.MEMBER)
+
+    with pytest.raises(ValueError, match="whitespace"):
+        Member.create("member 012", "Dana", MemberRole.MEMBER)
+
+    with pytest.raises(ValueError, match="Display name"):
+        Member.create("member-012", " ", MemberRole.MEMBER)
+
+    with pytest.raises(ValueError, match="identifier"):
+        Member.create("", "Dana", MemberRole.MEMBER)
+
+
+def test_invalid_suspend_leave_and_remove_transitions_are_rejected() -> None:
+    """Each membership transition enforces its required prior state."""
+    invited = Member.create("member-013", "Eva", MemberRole.MEMBER)
+    with pytest.raises(InvalidMembershipTransitionError):
+        invited.suspend()
+    with pytest.raises(InvalidMembershipTransitionError):
+        invited.leave()
+
+    active = Member.create("member-014", "Femi", MemberRole.MEMBER)
+    active.activate()
+    active.leave()
+    active.remove()
+    with pytest.raises(InvalidMembershipTransitionError):
+        active.remove()

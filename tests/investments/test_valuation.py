@@ -31,3 +31,9 @@ def test_valuation_rejects_zero_units_and_negative_values() -> None:
             liabilities=Decimal("0"),
             units_outstanding=Decimal("1"),
         )
+
+    valuation = InvestmentValuation(Decimal("100"), Decimal("0"), Decimal("1"))
+    with pytest.raises(ValueError, match="non-negative"):
+        valuation.member_value(Decimal("-1"))
+    with pytest.raises(ValueError, match="non-negative"):
+        InvestmentValuation(Decimal("100"), Decimal("-1"), Decimal("1"))

@@ -73,3 +73,24 @@ def test_vocabulary_rejects_invalid_allocations_and_naive_fx_timestamp() -> None
             effective_at=datetime(2027, 1, 31, 12, 0),
             source="fixture",
         )
+
+    with pytest.raises(ValueError, match="category"):
+        AllocationRule(categories={" ": Decimal("100")})
+    with pytest.raises(ValueError, match="non-negative"):
+        AllocationRule(categories={"cash": Decimal("-1"), "bond": Decimal("101")})
+
+    with pytest.raises(ValueError, match="identifier"):
+        AssetDefinition(" ", "Asset", AssetCategory.BOND, "XAF")
+    with pytest.raises(ValueError, match="name"):
+        AssetDefinition("asset-1", " ", AssetCategory.BOND, "XAF")
+    with pytest.raises(ValueError, match="source"):
+        ManualValuation("asset-1", Decimal("1"), "XAF", date(2027, 1, 1), " ")
+    with pytest.raises(ValueError, match="non-negative"):
+        ManualValuation("asset-1", Decimal("-1"), "XAF", date(2027, 1, 1), "source")
+
+    with pytest.raises(ValueError, match="differ"):
+        FxRate("EUR", "EUR", Decimal("1"), datetime(2027, 1, 1, tzinfo=UTC), "source")
+    with pytest.raises(ValueError, match="positive"):
+        FxRate("EUR", "XAF", Decimal("0"), datetime(2027, 1, 1, tzinfo=UTC), "source")
+    with pytest.raises(ValueError, match="source"):
+        FxRate("EUR", "XAF", Decimal("1"), datetime(2027, 1, 1, tzinfo=UTC), " ")

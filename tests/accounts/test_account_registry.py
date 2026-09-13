@@ -90,3 +90,17 @@ def test_registry_rejects_missing_and_inactive_account_references() -> None:
             account_id="account-1",
             event_date=date(2027, 1, 15),
         )
+
+
+def test_registry_rejects_invalid_ledger_links_and_missing_ledger_links() -> None:
+    registry = FinancialAccountRegistry()
+    registry.register(make_account())
+
+    with pytest.raises(ValueError, match="invalid"):
+        registry.link_ledger_account("account-1", "ledger account")
+
+    with pytest.raises(KeyError, match="linked"):
+        registry.ledger_account_for("account-1")
+
+    with pytest.raises(KeyError, match="not found"):
+        registry.get("missing")

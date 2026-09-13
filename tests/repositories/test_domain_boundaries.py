@@ -47,6 +47,22 @@ def test_classic_repository_preserves_rotations_and_payout_order() -> None:
     assert repository.get_rotation("rotation-1").recipient_for_cycle(1) == "a"
     assert [payout.cycle_number for payout in repository.payouts()] == [1]
 
+    with pytest.raises(ValueError, match="already"):
+        repository.save_rotation("rotation-1", ClassicRotation.from_active_members(("a",)))
+    with pytest.raises(ValueError, match="already"):
+        repository.record_payout(
+            ClassicPayout(
+                1,
+                "a",
+                Decimal("100"),
+                "JPY",
+                datetime(2027, 1, 1, tzinfo=UTC),
+                "payout-1",
+            )
+        )
+    with pytest.raises(KeyError, match="not found"):
+        repository.get_rotation("missing")
+
 
 def test_governance_and_audit_repositories_store_immutable_records() -> None:
     governance = InMemoryGovernanceRepository()
@@ -81,3 +97,20 @@ def test_governance_and_audit_repositories_store_immutable_records() -> None:
     assert audit.events_for("proposal", "proposal-1") == (event,)
     with pytest.raises(ValueError, match="already"):
         audit.record(event)
+
+    with pytest.raises(ValueError, match="already"):
+        governance.save_proposal(proposal)
+    with pytest.raises(ValueError, match="already"):
+        governance.save_ruleset(Ruleset("rules-1", 1, 1, {"amount": "100"}))
+    with pytest.raises(KeyError, match="not found"):
+        governance.get_proposal("missing")
+
+
+def test_member_and_audit_repositories_report_missing_records() -> None:
+    member_repository = InMemoryMemberRepository()
+    with pytest.raises(KeyError, match="not found"):
+        member_repository.get("missing")
+
+    audit_repository = InMemoryAuditRepository()
+    assert audit_repository.all_events() == ()
+    assert audit_repository.events_for("group", "missing") == ()

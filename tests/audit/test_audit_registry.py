@@ -77,3 +77,24 @@ def test_audit_registry_rejects_duplicate_ids_and_naive_timestamps() -> None:
                 "occurred_at": datetime(2027, 1, 15, 12, 0),
             }
         )
+
+
+def test_audit_events_require_identifiers_and_protect_details() -> None:
+    registry = AuditEventRegistry()
+    arguments = {
+        "event_id": "audit-1",
+        "event_type": "event.created",
+        "aggregate_type": "group",
+        "aggregate_id": "group-1",
+        "occurred_at": datetime(2027, 1, 15, tzinfo=UTC),
+        "actor_id": None,
+        "source_event": None,
+        "details": {"value": "original"},
+    }
+    event = registry.record(**arguments)
+    with pytest.raises(TypeError):
+        event.details["value"] = "changed"  # type: ignore[index]
+
+    for field in ("event_id", "event_type", "aggregate_type", "aggregate_id"):
+        with pytest.raises(ValueError, match="required"):
+            registry.record(**{**arguments, "event_id": f"audit-{field}", field: " "})

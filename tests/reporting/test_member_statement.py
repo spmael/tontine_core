@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+import pytest
+
 from tontine.reporting import (
     ContributionSummary,
     InvestmentSummary,
@@ -54,3 +56,15 @@ def test_member_statement_preserves_fractional_currency_and_penalties() -> None:
     assert statement.outstanding_total == Decimal("0.50")
     assert statement.penalties == Decimal("0.50")
     assert statement.investment.currency == "XAF"
+
+
+def test_member_statement_rejects_blank_identity_and_invalid_penalties() -> None:
+    investment = InvestmentSummary(Decimal("0"), Decimal("0"), Decimal("0"), "JPY")
+    with pytest.raises(ValueError, match="identity"):
+        build_member_statement(" ", "Member", "JPY", (), (), investment)
+    with pytest.raises(ValueError, match="identity"):
+        build_member_statement("member-1", " ", "JPY", (), (), investment)
+    with pytest.raises(ValueError, match="non-negative"):
+        build_member_statement(
+            "member-1", "Member", "JPY", (), (), investment, penalties=Decimal("-1")
+        )
