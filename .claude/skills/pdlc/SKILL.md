@@ -10,7 +10,7 @@ user_invocable: true
 # Package Development Lifecycle
 
 Use this skill to keep implementation work connected to the product requirements
-in `BRD_tontine_core_v1.md`. The package is the unit of delivery; organize work by
+in `BRD.md`. The package is the unit of delivery; organize work by
 domain capability, not by web application or framework.
 
 ## Responsibilities

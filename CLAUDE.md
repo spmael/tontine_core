@@ -11,7 +11,7 @@ payouts and investment allocation tracking without holding or moving real funds.
 
 ## Source of truth
 
-Read [`BRD_tontine_core_v1.md`](./BRD_tontine_core_v1.md) before proposing domain
+Read [`BRD.md`](./BRD.md) before proposing domain
 or architectural changes. It defines the Version 1 scope, users, domain model,
 and explicit exclusions.
 

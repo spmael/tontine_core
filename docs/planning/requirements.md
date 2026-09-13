@@ -1,6 +1,6 @@
 ---
 kind: requirements_register
-source: BRD_tontine_core_v1.md
+source: BRD.md
 status: active
 ---
 
