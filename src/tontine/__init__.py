@@ -9,18 +9,24 @@ from .exceptions import TontineError
 from .groups import Group
 
 
-def create_group(group_id: str, name: str, base_currency: str) -> Group:
+def create_group(
+	group_id: str,
+	name: str,
+	base_currency: str,
+	jurisdiction: str | None = None,
+) -> Group:
 	"""Create a draft group with validated identity and base currency.
 
 	Args:
 		group_id: Non-empty group identifier without whitespace.
 		name: Human-readable group name.
 		base_currency: ISO 4217 alpha-3 base currency code.
+		jurisdiction: Optional ISO 3166-1 alpha-2 group jurisdiction.
 
 	Returns:
 		A validated draft group.
 	"""
-	return Group.create_draft(group_id, name, base_currency)
+	return Group.create_draft(group_id, name, base_currency, jurisdiction)
 
 
 def create_contribution_cycle(
