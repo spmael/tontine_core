@@ -100,4 +100,6 @@ def test_ledger_entries_and_journals_validate_values() -> None:
             (),
         )
     with pytest.raises(ValueError, match="timezone-aware"):
-        JournalEntry("journal-invalid", datetime(2027, 1, 15), "Description", "event", ())
+        JournalEntry(
+            "journal-invalid", datetime(2027, 1, 15), "Description", "event", ()
+        )

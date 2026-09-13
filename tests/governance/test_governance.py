@@ -127,7 +127,9 @@ def test_governance_rejects_invalid_proposal_lifecycle_and_missing_ids(
         governance.open_proposal("proposal-invalid")
 
 
-def test_governance_rejects_invalid_proposal_inputs(governance: GovernanceRegistry) -> None:
+def test_governance_rejects_invalid_proposal_inputs(
+    governance: GovernanceRegistry,
+) -> None:
     base = {
         "proposal_id": "proposal-invalid",
         "title": "Invalid",

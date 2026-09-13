@@ -48,7 +48,9 @@ def test_classic_repository_preserves_rotations_and_payout_order() -> None:
     assert [payout.cycle_number for payout in repository.payouts()] == [1]
 
     with pytest.raises(ValueError, match="already"):
-        repository.save_rotation("rotation-1", ClassicRotation.from_active_members(("a",)))
+        repository.save_rotation(
+            "rotation-1", ClassicRotation.from_active_members(("a",))
+        )
     with pytest.raises(ValueError, match="already"):
         repository.record_payout(
             ClassicPayout(
