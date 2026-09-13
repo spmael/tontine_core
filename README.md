@@ -149,6 +149,7 @@ valuation = InvestmentValuation.from_liabilities(
 	liabilities=liabilities,
 	currency="JPY",
 	units_outstanding=Decimal("100"),
+	asset_currency="JPY",
 )
 
 units = MemberUnitLedger()

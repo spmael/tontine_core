@@ -97,6 +97,7 @@ def test_cycle_assesses_fixed_penalties_after_grace_period() -> None:
         timezone="UTC",
         grace_period_days=2,
         late_penalty=Decimal("50"),
+        penalty_currency="JPY",
     )
     cycle.add_expected_contribution("member-paid", Decimal("100"))
     cycle.add_expected_contribution("member-late", Decimal("100"))
@@ -123,6 +124,7 @@ def test_cycle_assesses_fixed_penalties_after_grace_period() -> None:
     assert late.status is ContributionStatus.LATE
     assert late.penalty == Decimal("50")
     assert late.penalty_record is not None
+    assert late.penalty_record.currency == "JPY"
     assert late.penalty_record.reason.value == "late_contribution"
     assert late.penalty_record.status.value == "unpaid"
     assert late.penalty_record.destination.value == "common_reserve"

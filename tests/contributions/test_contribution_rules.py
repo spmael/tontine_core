@@ -10,6 +10,7 @@ from tontine.contributions import (
     CycleStatus,
     DueDateConvention,
 )
+from tontine.exceptions import InvalidCurrencyError
 
 
 def test_weekly_jpy_rule_uses_weekday_convention() -> None:
@@ -187,6 +188,25 @@ def test_cycle_rejects_invalid_identity_timezone_members_and_amounts() -> None:
 
     with pytest.raises(ValueError, match="timezone"):
         ContributionCycle("cycle-1", date(2027, 1, 1), date(2027, 1, 7), "Invalid/Zone")
+
+    with pytest.raises(ValueError, match="Penalty currency"):
+        ContributionCycle(
+            "cycle-1",
+            date(2027, 1, 1),
+            date(2027, 1, 7),
+            "UTC",
+            late_penalty=Decimal("1"),
+        )
+
+    with pytest.raises(InvalidCurrencyError, match="ISO 4217"):
+        ContributionCycle(
+            "cycle-1",
+            date(2027, 1, 1),
+            date(2027, 1, 7),
+            "UTC",
+            late_penalty=Decimal("1"),
+            penalty_currency="ZZZ",
+        )
 
     cycle = ContributionCycle("cycle-2", date(2027, 1, 1), date(2027, 1, 7), "UTC")
     with pytest.raises(ValueError, match="Member"):

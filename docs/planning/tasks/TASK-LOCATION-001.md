@@ -36,7 +36,7 @@ required group or member identity model.
 ## Validation
 
 ```text
-uv run pytest tests/locations tests/groups tests/members
+uv run pytest tests/groups tests/members
 ```
 
 ## Completion Notes

@@ -244,6 +244,7 @@ def build_group_statement(
         liabilities: Ledger-derived liabilities in the base currency.
         historical_payouts: Recorded payouts.
         pending_proposals: Governance proposal identifiers awaiting decision.
+        penalties: Total assessed penalty amount in the base currency.
 
     Returns:
         An immutable structured statement; no rendering is performed.

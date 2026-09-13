@@ -170,6 +170,7 @@ class Penalty:
     cycle_id: str
     reason: PenaltyReason
     amount: Decimal
+    currency: CurrencyCode
     assessed_on: datetime
     status: PenaltyStatus = PenaltyStatus.UNPAID
     destination: PenaltyDestination = PenaltyDestination.COMMON_RESERVE
@@ -181,6 +182,7 @@ class Penalty:
         object.__setattr__(self, "status", PenaltyStatus(self.status))
         object.__setattr__(self, "destination", PenaltyDestination(self.destination))
         object.__setattr__(self, "amount", _decimal_amount(self.amount, "Penalty"))
+        object.__setattr__(self, "currency", CurrencyCode(str(self.currency)))
         if self.assessed_on.tzinfo is None or self.assessed_on.utcoffset() is None:
             raise ValueError("Penalty timestamps must be timezone-aware.")
 
@@ -214,6 +216,7 @@ class ContributionCycle:
     recorded_contributions: dict[str, Contribution] = field(default_factory=dict)
     grace_period_days: int = 0
     late_penalty: Decimal = Decimal("0")
+    penalty_currency: CurrencyCode | None = None
 
     def __post_init__(self) -> None:
         if not self.cycle_id.strip():
@@ -222,7 +225,13 @@ class ContributionCycle:
         self.status = CycleStatus(self.status)
         if self.grace_period_days < 0:
             raise ValueError("Grace period cannot be negative.")
-        self.late_penalty = _decimal_amount(self.late_penalty)
+        self.late_penalty = _decimal_amount(self.late_penalty, "Late penalty")
+        if self.penalty_currency is not None:
+            self.penalty_currency = CurrencyCode(str(self.penalty_currency))
+        if self.late_penalty != 0 and self.penalty_currency is None:
+            raise ValueError(
+                "Penalty currency is required when a late penalty is configured."
+            )
 
     def add_expected_contribution(
         self,
@@ -381,6 +390,7 @@ class ContributionCycle:
         ) or (actual is None and _local_date(as_of, self.timezone) > threshold)
         if not late or self.late_penalty == 0:
             return Decimal("0"), None
+        assert self.penalty_currency is not None
         reason = (
             PenaltyReason.MISSED_CONTRIBUTION
             if actual is None
@@ -391,6 +401,7 @@ class ContributionCycle:
             cycle_id=self.cycle_id,
             reason=reason,
             amount=self.late_penalty,
+            currency=self.penalty_currency,
             assessed_on=payment_date or as_of,
         )
         return penalty.amount, penalty

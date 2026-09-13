@@ -169,7 +169,7 @@ valuations, and liabilities include manually supplied provenance. Supported
 activity categories are purchase, sale, income, and fee. Manual valuations and
 liabilities require non-negative values, effective dates, and sources.
 
-Member unit balances are derived from issue and redemption events. Unit
+Member unit balances are maintained by issue and redemption operations. Unit
 distributions are not currently modeled. The unit ledger calculates each
 member's ownership percentage from their balance divided by total outstanding
 units. Unit prices must be positive for issuance, redemption cannot exceed a

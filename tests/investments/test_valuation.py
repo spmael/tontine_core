@@ -3,6 +3,7 @@ from decimal import Decimal
 
 import pytest
 
+from tontine.exceptions import InvalidCurrencyError
 from tontine.investments import InvestmentValuation, Liability, LiabilityRegistry
 
 
@@ -58,7 +59,11 @@ def test_valuation_aggregates_currency_matched_liabilities() -> None:
     )
 
     valuation = InvestmentValuation.from_liabilities(
-        Decimal("1000"), liabilities, "JPY", Decimal("10")
+        Decimal("1000"),
+        liabilities,
+        "JPY",
+        Decimal("10"),
+        asset_currency="JPY",
     )
     assert valuation.liabilities == Decimal("125")
     assert valuation.nav == Decimal("875")
@@ -66,3 +71,28 @@ def test_valuation_aggregates_currency_matched_liabilities() -> None:
         liabilities.record(
             Liability("loan-1", Decimal("1"), "JPY", date(2027, 1, 3), "statement")
         )
+
+
+def test_valuation_rejects_cross_currency_assets_and_invalid_liabilities() -> None:
+    liabilities = LiabilityRegistry()
+    liabilities.record(
+        Liability("loan-1", Decimal("100"), "JPY", date(2027, 1, 1), "statement")
+    )
+
+    with pytest.raises(ValueError, match="match liability"):
+        InvestmentValuation.from_liabilities(
+            Decimal("1000"),
+            liabilities,
+            "JPY",
+            Decimal("10"),
+            asset_currency="USD",
+        )
+
+    with pytest.raises(ValueError, match="identifier"):
+        Liability(" ", Decimal("1"), "JPY", date(2027, 1, 1), "statement")
+    with pytest.raises(ValueError, match="source"):
+        Liability("loan-2", Decimal("1"), "JPY", date(2027, 1, 1), " ")
+    with pytest.raises(ValueError, match="non-negative"):
+        Liability("loan-3", Decimal("-1"), "JPY", date(2027, 1, 1), "statement")
+    with pytest.raises(InvalidCurrencyError, match="ISO 4217"):
+        Liability("loan-4", Decimal("1"), "ZZZ", date(2027, 1, 1), "statement")

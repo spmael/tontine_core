@@ -9,12 +9,13 @@ from tontine.reporting import InvestmentSummary, build_member_statement
 
 
 def test_public_api_creates_group_and_cycle_without_infrastructure() -> None:
-    group = tontine.create_group("group-1", "Community Circle", "JPY")
+    group = tontine.create_group("group-1", "Community Circle", "JPY", "CM")
     cycle = tontine.create_contribution_cycle(
         "2027-01", date(2027, 1, 1), date(2027, 1, 31), "Asia/Tokyo"
     )
 
     assert group.base_currency == "JPY"
+    assert group.jurisdiction == "CM"
     assert cycle.cycle_id == "2027-01"
 
 

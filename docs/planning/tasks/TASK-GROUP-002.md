@@ -23,6 +23,7 @@ identity, status, and role validation.
 
 - [x] A draft tontine is created with a valid name and ISO currency code.
 - [x] Members are added with unique identifiers and explicit roles.
+- [x] Members record an explicit membership start date.
 - [x] Duplicate member identifiers are rejected at the domain boundary.
 - [x] Membership status transitions enforce the valid lifecycle.
 - [x] Unit tests cover group creation, member creation, and invalid transitions.
@@ -42,4 +43,4 @@ uv run pytest tests/groups tests/members
 
 ## Completion Notes
 
-The domain entities are implemented and validated in the core package. They enforce valid group currency codes, member uniqueness, explicit roles, and valid membership transitions across the supported domain lifecycle.
+The domain entities are implemented and validated in the core package. They enforce valid group currency codes, member uniqueness, explicit roles, explicit membership start dates, and valid membership transitions across the supported domain lifecycle.

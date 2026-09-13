@@ -447,8 +447,14 @@ class InvestmentValuation:
         liabilities: LiabilityRegistry,
         currency: str,
         units_outstanding: Decimal | int | str,
+        *,
+        asset_currency: str,
     ) -> InvestmentValuation:
         """Create a valuation using liabilities aggregated from a registry."""
+        if CurrencyCode(asset_currency) != CurrencyCode(currency):
+            raise ValueError(
+                "Asset currency must match liability aggregation currency."
+            )
         return cls(
             assets=_non_negative(assets, "Assets"),
             liabilities=liabilities.total(currency),
