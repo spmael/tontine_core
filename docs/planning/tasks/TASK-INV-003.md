@@ -13,17 +13,17 @@ owner: domain
 
 ## Goal
 
-Derive total assets, liabilities, NAV, unit price, and member attributable value
-from recorded investment and ledger data.
+Derive NAV, unit price, member attributable value, and ownership percentage from
+caller-supplied valuation totals and currency-matched liabilities.
 
 ## Acceptance Criteria
 
-- [x] Calculate total assets using Decimal arithmetic.
-- [x] Calculate total liabilities using Decimal arithmetic.
+- [x] Accept caller-supplied asset totals using Decimal arithmetic.
+- [x] Aggregate recorded liabilities by currency when constructing a valuation.
 - [x] Calculate `NAV = assets - liabilities`.
 - [x] Calculate unit price from NAV and units outstanding.
-- [x] Derive member attributable value from units and unit price.
-- [x] Add tests for fractional EUR and whole-unit JPY/XAF values.
+- [x] Derive member attributable value and ownership percentage from supplied units.
+- [x] Add tests for fractional values, invalid inputs, and currency-matched liability totals.
 
 ## Planned Changes
 
@@ -38,4 +38,4 @@ uv run pytest tests/investments/test_valuation.py
 
 ## Completion Notes
 
-Implemented Decimal-based NAV, unit-price, and member-attributable-value calculations from supplied valuation inputs without implicit currency quantization.
+Implemented Decimal-based NAV, unit-price, member-value, and ownership calculations from caller-supplied totals, with liability aggregation available through `LiabilityRegistry`.

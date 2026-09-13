@@ -14,7 +14,7 @@ BRD and planning markdown
 
 ## Source of truth
 
-- `BRD_tontine_core_v1.md` is authoritative for product scope and Version 1 boundaries.
+- `BRD.md` is authoritative for the current product scope and implementation boundaries.
 - `docs/planning/requirements.md` is authoritative for stable requirement IDs.
 - Capability and task files are authoritative for scope and acceptance criteria.
 - Completion records are authoritative for implementation evidence.

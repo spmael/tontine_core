@@ -1,6 +1,6 @@
 ---
 kind: requirements_register
-source: BRD_tontine_core_v1.md
+source: BRD.md
 status: active
 ---
 
@@ -46,9 +46,8 @@ retrieve live balances, initiate transfers, or synchronize accounts automaticall
 
 ### FR-GRP-001 - Create a tontine
 
-The package must create a tontine with an identifier, name, description, base
-currency, creation date, status, ruleset reference, contribution frequency,
-contribution amount, and active cycle reference.
+The package must create a tontine with a non-empty identifier, non-blank name,
+and valid ISO 4217 base currency. Group identifiers must reject whitespace.
 
 ### FR-GRP-002 - Manage membership
 
@@ -68,13 +67,13 @@ implementing application authentication.
 ### FR-LOC-001 - Support optional group jurisdiction metadata
 
 The package may record an optional ISO 3166-1 alpha-2 jurisdiction for a group;
-the field must not be required for group creation or used as a payment or
-regulatory decision.
+the field is metadata only and does not perform compliance or regulatory checks.
 
 ### FR-LOC-002 - Support optional member residence metadata
 
 The package may record an optional ISO 3166-1 alpha-2 residence country for a
-member without implementing identity verification, tax classification, or KYC.
+member; the field is metadata only and does not perform identity verification,
+tax classification, or regulatory checks.
 
 ## Contribution Engine
 
@@ -87,8 +86,8 @@ contributions are the initial supported frequencies.
 ### FR-CON-002 - Create contribution cycles
 
 The package must create cycles with start date, due date, status, expected
-contributions, recorded contributions, outstanding contributions, and an
-associated payout or allocation.
+contributions, recorded contributions, and outstanding contributions. Payout or
+allocation association is outside the current implementation baseline.
 
 ### FR-CON-003 - Record contributions
 
@@ -104,6 +103,14 @@ and report outstanding contributions.
 
 The package must reject duplicate contribution records unless an explicit
 adjustment or correction path is used.
+
+### FR-CON-006 - Assess contribution penalties
+
+The package must assess a configured fixed penalty after the contribution due
+date and grace period for late or missed contributions. Penalties must remain
+separate from contribution amounts and investment units, default to the common
+reserve destination, and remain unpaid until settled by an external or future
+ledger operation.
 
 ## Classic Tontine
 
@@ -141,13 +148,16 @@ income, fees, and manual valuation updates.
 
 ### FR-INV-003 - Calculate investment value
 
-The package must calculate total assets, total liabilities, net asset value, and
-member economic ownership.
+The package must calculate net asset value, unit price, member economic value,
+and member ownership percentage. Liability registries must aggregate recorded
+liabilities by currency. Asset aggregation from investment records is outside
+the current baseline; valuation assets remain caller-supplied.
 
 ### FR-INV-004 - Track member units
 
 The package must use a deterministic unit-based ownership model with sufficient
-precision for issuance, redemption, contributions, and distributions.
+precision for issuance and redemption. Unit distributions are outside the
+current implementation baseline.
 
 ### FR-INV-005 - Support multi-currency assets
 
@@ -179,13 +189,15 @@ adjustment entries.
 
 ### FR-GOV-001 - Version group rules
 
-Each tontine must have versioned rulesets with effective dates, and historical
-events must reference the rules applicable at the time.
+The package must provide immutable versioned rulesets with positive versions and
+effective cycles and resolve the applicable ruleset for a cycle. Attaching
+ruleset identifiers to historical events is outside the current baseline.
 
 ### FR-GOV-002 - Manage proposals
 
-The package must create, open, approve, reject, expire, and cancel proposals with
-proposer, deadline, threshold, and status data.
+The package must create and open proposals, record votes, and evaluate proposals
+as approved or rejected with proposer, deadline, threshold, and status data.
+Expire and cancel transitions are outside the current baseline.
 
 ### FR-GOV-003 - Record votes
 
@@ -270,7 +282,7 @@ reporting.
 | Package Foundation | FR-PKG-001, NFR-PKG-001 | CAP-PACKAGE-001 |
 | Financial Account Registry | FR-ACC-001..002, NFR-ACC-001 | CAP-ACCOUNT-001 |
 | Group and Membership | FR-GRP-001..004 | CAP-GROUP-001 |
-| Contribution Engine | FR-CON-001..005 | CAP-CON-001 |
+| Contribution Engine | FR-CON-001..006 | CAP-CON-001 |
 | Classic Tontine | FR-CLS-001..004 | CAP-CLASSIC-001 |
 | Investment Tontine | FR-INV-001..005 | CAP-INVEST-001 |
 | Ledger and Accounting | FR-LDG-001..004 | CAP-LEDGER-001 |

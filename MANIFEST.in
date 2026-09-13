@@ -1,0 +1,6 @@
+exclude AGENTS.md
+exclude CLAUDE.md
+exclude BRD.md
+prune tests
+prune docs
+prune examples

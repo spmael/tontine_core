@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import date
 from enum import StrEnum
 
+from tontine.countries import CountryCode
 from tontine.exceptions import InvalidMembershipTransitionError
 
 
@@ -44,6 +46,8 @@ class Member:
         member_id: str,
         display_name: str,
         role: MemberRole,
+        membership_start_date: date,
+        residence_country: CountryCode | None = None,
         status: MembershipStatus = MembershipStatus.INVITED,
     ) -> None:
         self.member_id = MemberId(member_id)
@@ -51,6 +55,12 @@ class Member:
         if not self.display_name:
             raise ValueError("Display name is required.")
         self.role = role
+        self.membership_start_date = membership_start_date
+        self.residence_country = (
+            None
+            if residence_country is None
+            else CountryCode(str(residence_country))
+        )
         self.status = status
 
     @classmethod
@@ -59,6 +69,8 @@ class Member:
         member_id: str,
         display_name: str,
         role: MemberRole,
+        membership_start_date: date,
+        residence_country: str | None = None,
     ) -> Member:
         """Create a member in invited status for later activation.
 
@@ -66,6 +78,8 @@ class Member:
             member_id: Non-empty identifier without whitespace.
             display_name: Human-readable member name.
             role: Explicit role within the tontine.
+            membership_start_date: Date the membership begins.
+            residence_country: Optional ISO 3166-1 alpha-2 residence code.
 
         Returns:
             A member in ``invited`` status.
@@ -74,6 +88,12 @@ class Member:
             member_id=member_id,
             display_name=display_name,
             role=role,
+            membership_start_date=membership_start_date,
+            residence_country=(
+                None
+                if residence_country is None
+                else CountryCode(residence_country)
+            ),
             status=MembershipStatus.INVITED,
         )
 
@@ -116,4 +136,10 @@ class Member:
         )
 
 
-__all__ = ["Member", "MemberId", "MemberRole", "MembershipStatus"]
+__all__ = [
+    "CountryCode",
+    "Member",
+    "MemberId",
+    "MemberRole",
+    "MembershipStatus",
+]

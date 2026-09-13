@@ -15,6 +15,7 @@ Implemented the core tontine and member entities with validated identifiers, exp
 
 - [x] Draft tontine creation uses a valid name and ISO currency code: validated in `src/tontine/groups/__init__.py` and exercised by `tests/groups/test_group_domain.py`.
 - [x] Members are added with unique identifiers and explicit roles: `Group.add_member()` enforces uniqueness and stores members by identifier.
+- [x] Members store an explicit membership start date: `Member.create()` requires `membership_start_date` and preserves it on the entity.
 - [x] Duplicate identifiers are rejected at the domain boundary: `DuplicateMemberError` is raised for repeat member IDs.
 - [x] Membership transitions follow the valid lifecycle: `activate()`, `suspend()`, `leave()`, and `remove()` enforce transitions in `src/tontine/members/__init__.py`.
 - [x] Unit tests cover group creation, member creation, and invalid transitions: `tests/groups/test_group_domain.py` and `tests/members/test_membership.py`.

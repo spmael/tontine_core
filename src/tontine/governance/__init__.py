@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Any
 
 from tontine.audit import AuditEvent, AuditEventRegistry
@@ -31,6 +33,22 @@ class VoteChoice(StrEnum):
     ABSTAIN = "abstain"
 
 
+def _freeze_rule_value(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return MappingProxyType(
+            {key: _freeze_rule_value(item) for key, item in value.items()}
+        )
+    if isinstance(value, list):
+        return tuple(_freeze_rule_value(item) for item in value)
+    if isinstance(value, tuple):
+        return tuple(_freeze_rule_value(item) for item in value)
+    if isinstance(value, set):
+        return frozenset(_freeze_rule_value(item) for item in value)
+    if isinstance(value, frozenset):
+        return frozenset(_freeze_rule_value(item) for item in value)
+    return value
+
+
 @dataclass(frozen=True)
 class Ruleset:
     """Immutable version of group rules effective from a cycle onward."""
@@ -38,14 +56,14 @@ class Ruleset:
     ruleset_id: str
     version: int
     effective_cycle: int
-    rules: dict[str, Any]
+    rules: Mapping[str, Any]
 
     def __post_init__(self) -> None:
         if not self.ruleset_id.strip():
             raise ValueError("Ruleset identifier is required.")
         if self.version < 1 or self.effective_cycle < 1:
             raise ValueError("Ruleset version and effective cycle must be positive.")
-        object.__setattr__(self, "rules", dict(self.rules))
+        object.__setattr__(self, "rules", _freeze_rule_value(self.rules))
 
 
 @dataclass

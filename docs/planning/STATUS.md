@@ -1,6 +1,6 @@
 ---
 kind: status_dashboard
-period: 2026-09-12
+period: 2026-09-13
 ---
 
 # Package Delivery Status
@@ -9,12 +9,12 @@ _Generated from capability and task frontmatter._
 
 ## Summary
 
-- backlog: 3
+- backlog: 1
 - blocked: 0
 - in_progress: 0
 - partial: 0
 - ready: 0
-- shipped: 42
+- shipped: 44
 
 ## Items
 
@@ -28,7 +28,7 @@ _Generated from capability and task frontmatter._
 | capability | CAP-GROUP-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-INV-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-LEDGER-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
-| capability | CAP-LOCATION-001 | backlog |  |  | domain |
+| capability | CAP-LOCATION-001 | shipped | 2026-09-13 | 2026-09-13 | domain |
 | capability | CAP-PACKAGE-001 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
 | capability | CAP-REPORT-001 | shipped | 2026-09-12 | 2026-09-12 | reporting |
 | task | TASK-ACCOUNT-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
@@ -57,7 +57,7 @@ _Generated from capability and task frontmatter._
 | task | TASK-LEDGER-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-LEDGER-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-LEDGER-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
-| task | TASK-LOCATION-001 | backlog |  |  | domain |
+| task | TASK-LOCATION-001 | shipped | 2026-09-13 | 2026-09-13 | domain |
 | task | TASK-PACKAGE-001 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
 | task | TASK-PACKAGE-002 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
 | task | TASK-PACKAGE-003 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |

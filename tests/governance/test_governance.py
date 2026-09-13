@@ -205,3 +205,19 @@ def test_rulesets_are_versioned_by_effective_cycle(
         Ruleset("", 1, 1, {})
     with pytest.raises(ValueError, match="positive"):
         Ruleset("rules-invalid", 0, 1, {})
+
+
+def test_rulesets_freeze_nested_rule_values() -> None:
+    source = {"policy": {"threshold": 1}, "steps": ["review", "approve"]}
+    ruleset = Ruleset("rules-immutable", 1, 1, source)
+    source["policy"]["threshold"] = 2
+    source["steps"].append("publish")
+
+    assert ruleset.rules["policy"]["threshold"] == 1
+    assert ruleset.rules["steps"] == ("review", "approve")
+    with pytest.raises(TypeError):
+        policy = ruleset.rules["policy"]
+        policy["threshold"] = 2
+    with pytest.raises(AttributeError):
+        steps = ruleset.rules["steps"]
+        steps.append("publish")

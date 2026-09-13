@@ -8,14 +8,15 @@ and expose testable behavior.
 
 | ID | Capability | Requirements | Status | Delivery intent |
 | --- | --- | --- | --- | --- |
-| CAP-PACKAGE-001 | Package foundation | FR-PKG-001, NFR-PKG-001 | ready | First delivery item |
+| CAP-PACKAGE-001 | Package foundation | FR-PKG-001, NFR-PKG-001, NFR-SCP-001 | ready | First delivery item |
 | CAP-GROUP-001 | Group and membership | FR-GRP-001..004 | ready | After package foundation |
-| CAP-CON-001 | Contribution engine | FR-CON-001..005 | ready | First vertical slice |
+| CAP-CON-001 | Contribution engine | FR-CON-001..006 | shipped | First vertical slice |
 | CAP-ACCOUNT-001 | Financial account registry | FR-ACC-001..002, NFR-ACC-001 | backlog | Before ledger integration |
 | CAP-CLASSIC-001 | Classic rotation | FR-CLS-001..004 | backlog | After contribution slice |
 | CAP-LEDGER-001 | Double-entry ledger | FR-LDG-001..004, NFR-CAL-* | backlog | Shared financial foundation |
 | CAP-INVEST-001 | Investment tracking | FR-INV-001..005 | backlog | After ledger foundation |
 | CAP-GOV-001 | Governance and audit | FR-GOV-001..004 | backlog | Rules and event history |
+| CAP-LOCATION-001 | Optional location metadata | FR-LOC-001..002 | shipped | After group and membership |
 | CAP-REPORT-001 | Statements and reporting | FR-RPT-001..003 | backlog | After core projections |
 | CAP-API-001 | Public API and adapters | FR-API-001..003 | backlog | Package boundary |
 

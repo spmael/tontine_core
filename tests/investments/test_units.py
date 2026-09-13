@@ -15,6 +15,11 @@ def test_units_are_issued_and_redeemed_deterministically() -> None:
     assert ledger.balance_for("member-a") == Decimal("250")
     assert ledger.balance_for("member-b") == Decimal("150")
     assert ledger.total_units == Decimal("400")
+    assert ledger.ownership_percentage_for("member-a") == Decimal("62.5")
+    assert ledger.ownership_percentages() == {
+        "member-a": Decimal("62.5"),
+        "member-b": Decimal("37.5"),
+    }
 
 
 def test_units_reject_duplicate_events_and_invalid_quantities() -> None:

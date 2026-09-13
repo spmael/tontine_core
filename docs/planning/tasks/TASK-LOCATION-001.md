@@ -1,6 +1,8 @@
 ---
 id: TASK-LOCATION-001
-status: backlog
+status: shipped
+started: 2026-09-13
+completed: 2026-09-13
 requirements:
   - FR-LOC-001
   - FR-LOC-002
@@ -17,26 +19,30 @@ required group or member identity model.
 
 ## Acceptance Criteria
 
-- [ ] Add reusable ISO 3166-1 alpha-2 validation for optional location fields.
-- [ ] Add optional group jurisdiction metadata.
-- [ ] Add optional member residence-country metadata.
-- [ ] Test missing, valid, and invalid location values.
-- [ ] Document that the fields do not perform KYC, tax, or regulatory checks.
+- [x] Add reusable ISO 3166-1 alpha-2 validation for optional location fields.
+- [x] Add optional group jurisdiction metadata.
+- [x] Add optional member residence-country metadata.
+- [x] Test missing, valid, and invalid location values.
+- [x] Document that the fields do not perform KYC, tax, or regulatory checks.
 
 ## Planned Changes
 
-- `src/tontine/locations/`
 - `src/tontine/groups/`
 - `src/tontine/members/`
-- `tests/locations/`
+- `src/tontine/countries/`
+- `tests/groups/`
+- `tests/members/`
 
 ## Validation
 
 ```text
-uv run pytest tests/locations tests/groups tests/members
+uv run pytest tests/groups tests/members
 ```
 
 ## Completion Notes
 
-Backlog item. Country metadata is intentionally optional and separate from the
-core group and member identity requirements.
+Implemented using the existing `CountryCode` value object. Country metadata is
+optional and separate from identity verification, tax, and regulatory behavior.
+
+Validation: `uv run pytest tests/groups tests/members -q`, with 16 tests passing;
+Ruff and mypy passed for the changed modules.

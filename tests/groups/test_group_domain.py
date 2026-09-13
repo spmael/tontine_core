@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 import pytest
 
 from tontine.exceptions import (
     DuplicateMemberError,
+    InvalidCountryError,
     InvalidCurrencyError,
     InvalidMembershipTransitionError,
 )
@@ -25,6 +28,21 @@ def test_create_draft_tontine_with_valid_currency() -> None:
     assert group.name == "Community Circle"
     assert group.base_currency == "JPY"
     assert group.status is GroupStatus.DRAFT
+    assert group.jurisdiction is None
+
+
+def test_group_accepts_optional_jurisdiction_metadata() -> None:
+    group = Group.create_draft(
+        group_id="grp-location",
+        name="Location Group",
+        base_currency="JPY",
+        jurisdiction="ng",
+    )
+
+    assert group.jurisdiction == "NG"
+
+    with pytest.raises(InvalidCountryError, match="ISO 3166-1"):
+        Group.create_draft("grp-invalid-location", "Group", "JPY", "ZZ")
 
 
 def test_reject_invalid_currency_code() -> None:
@@ -56,6 +74,7 @@ def test_add_members_with_unique_identifiers_and_roles() -> None:
         member_id="member-001",
         display_name="Alice",
         role=MemberRole.MEMBER,
+        membership_start_date=date(2027, 1, 1),
     )
     group.add_member(member)
 
@@ -67,7 +86,9 @@ def test_add_members_with_unique_identifiers_and_roles() -> None:
 def test_reject_duplicate_member_identifiers() -> None:
     """Duplicate member IDs are rejected to preserve identity integrity."""
     group = Group.create_draft(group_id="grp-004", name="Dupes", base_currency="JPY")
-    group.add_member(Member.create("member-001", "Alice", MemberRole.MEMBER))
+    group.add_member(
+        Member.create("member-001", "Alice", MemberRole.MEMBER, date(2027, 1, 1))
+    )
 
     with pytest.raises(DuplicateMemberError):
         group.add_member(
@@ -75,13 +96,14 @@ def test_reject_duplicate_member_identifiers() -> None:
                 "member-001",
                 "Alice Duplicate",
                 MemberRole.MEMBER,
+                date(2027, 1, 1),
             )
         )
 
 
 def test_member_status_transitions_are_valid() -> None:
     """Membership status transitions must follow the approved lifecycle."""
-    member = Member.create("member-002", "Bob", MemberRole.TREASURER)
+    member = Member.create("member-002", "Bob", MemberRole.TREASURER, date(2027, 1, 1))
 
     member.activate()
     assert member.status is MembershipStatus.ACTIVE

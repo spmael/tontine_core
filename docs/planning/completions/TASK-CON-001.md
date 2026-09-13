@@ -30,7 +30,6 @@ Result: 6 tests passed; Ruff and mypy passed.
 
 ## Files Changed
 
-- `BRD_tontine_core_v1.md`
 - `docs/planning/requirements.md`
 - `docs/planning/capabilities/CAP-CON-001.md`
 - `docs/planning/tasks/TASK-CON-001.md`

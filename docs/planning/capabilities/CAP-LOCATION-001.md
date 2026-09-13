@@ -1,6 +1,8 @@
 ---
 id: CAP-LOCATION-001
-status: backlog
+status: shipped
+started: 2026-09-13
+completed: 2026-09-13
 adr_refs: []
 depends_on:
   - CAP-GROUP-001
@@ -27,11 +29,17 @@ residence country using known ISO 3166-1 alpha-2 codes.
 
 ## Acceptance Criteria
 
-- [ ] Group jurisdiction is optional and validates known ISO 3166-1 alpha-2 codes.
-- [ ] Member residence country is optional and validates known ISO 3166-1 alpha-2 codes.
-- [ ] Missing location metadata remains valid.
-- [ ] No compliance, tax, or identity-verification behavior is introduced.
+- [x] Group jurisdiction is optional and validates known ISO 3166-1 alpha-2 codes.
+- [x] Member residence country is optional and validates known ISO 3166-1 alpha-2 codes.
+- [x] Missing location metadata remains valid.
+- [x] No compliance, tax, or identity-verification behavior is introduced.
 
 ## Implementation Tasks
 
-- TASK-LOCATION-001: Add optional location value objects and tests.
+- [x] TASK-LOCATION-001: Add optional location metadata and tests.
+
+## Verification
+
+- `CountryCode` provides reusable ISO 3166-1 alpha-2 validation.
+- `Group.jurisdiction` and `Member.residence_country` are optional normalized values.
+- Tests cover omitted, valid, and invalid metadata.

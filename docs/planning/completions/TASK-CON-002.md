@@ -15,6 +15,7 @@ Implemented contribution recording, deterministic status classification, duplica
 
 - [x] Records include member, cycle, expected amount, actual amount, payment timestamp, status, external reference, and notes.
 - [x] Pending, paid, partial, late, and missed states are derived deterministically using the cycle timezone.
+- [x] Late and missed contributions can assess a fixed penalty with an explicit currency, unpaid status, and default common-reserve destination.
 - [x] Expected, received, and outstanding totals use Decimal arithmetic.
 - [x] Duplicate records raise `DuplicateContributionError` unless `adjustment=True` is supplied.
 - [x] Focused tests cover the first vertical slice and timezone-aware status behavior.
@@ -25,7 +26,7 @@ Implemented contribution recording, deterministic status classification, duplica
 uv run pytest tests/contributions/test_contribution_recording.py
 ```
 
-Result: 3 tests passed.
+Result: 4 tests passed.
 
 ## Files Changed
 

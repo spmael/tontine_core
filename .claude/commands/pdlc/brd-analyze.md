@@ -3,7 +3,7 @@ description: Refresh the package requirements register from the BRD.
 argument-hint:
 ---
 
-Read `BRD_tontine_core_v1.md` in full and compare it with
+Read `BRD.md` in full and compare it with
 `docs/planning/requirements.md`.
 
 1. Preserve existing requirement IDs.

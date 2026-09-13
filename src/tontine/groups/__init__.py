@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
+from tontine.countries import CountryCode
 from tontine.currencies import CurrencyCode
 from tontine.exceptions import (
     DuplicateGroupError,
@@ -41,6 +42,7 @@ class Group:
         name: str,
         base_currency: CurrencyCode,
         status: GroupStatus = GroupStatus.DRAFT,
+        jurisdiction: CountryCode | None = None,
     ) -> None:
         self.group_id = GroupId(group_id)
         self.name = name.strip()
@@ -48,6 +50,9 @@ class Group:
             raise ValueError("Group name is required.")
         self.base_currency = CurrencyCode(base_currency)
         self.status = status
+        self.jurisdiction = (
+            None if jurisdiction is None else CountryCode(str(jurisdiction))
+        )
         self.members: dict[str, Member] = {}
 
     @classmethod
@@ -56,6 +61,7 @@ class Group:
         group_id: str,
         name: str,
         base_currency: str,
+        jurisdiction: str | None = None,
     ) -> Group:
         """Create a draft group with validated identity and currency metadata.
 
@@ -63,6 +69,7 @@ class Group:
             group_id: Non-empty identifier without whitespace.
             name: Display name for the group.
             base_currency: Supported three-letter currency code.
+            jurisdiction: Optional ISO 3166-1 alpha-2 jurisdiction code.
 
         Returns:
             A group in ``draft`` status.
@@ -72,6 +79,9 @@ class Group:
             name=name,
             base_currency=CurrencyCode(base_currency),
             status=GroupStatus.DRAFT,
+            jurisdiction=(
+                None if jurisdiction is None else CountryCode(jurisdiction)
+            ),
         )
 
     def add_member(self, member: Member) -> None:
@@ -138,6 +148,7 @@ class GroupRepository:
             ) from exc
 
 __all__ = [
+    "CountryCode",
     "CurrencyCode",
     "Group",
     "GroupId",

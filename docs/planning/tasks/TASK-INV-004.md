@@ -13,15 +13,14 @@ owner: domain
 
 ## Goal
 
-Track member units and deterministic issuance, redemption, contribution, and
-distribution effects.
+Track deterministic member-unit issuance and redemption with derived balances.
 
 ## Acceptance Criteria
 
 - [x] Issue units from an explicit contribution and unit price.
 - [x] Reject negative or non-finite unit quantities.
-- [x] Track member unit balances from immutable unit events.
-- [x] Support redemption and distribution events deterministically.
+- [x] Track member unit balances through issue and redemption operations.
+- [x] Support redemption deterministically without unit distributions.
 - [x] Add tests for missed contributions, late joining, additional contributions, and member exit.
 
 ## Planned Changes
