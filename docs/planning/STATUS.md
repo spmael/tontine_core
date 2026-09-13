@@ -28,7 +28,7 @@ _Generated from capability and task frontmatter._
 | capability | CAP-GROUP-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-INV-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-LEDGER-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
-| capability | CAP-LOCATION-001 | shipped |  |  | domain |
+| capability | CAP-LOCATION-001 | shipped | 2026-09-13 | 2026-09-13 | domain |
 | capability | CAP-PACKAGE-001 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
 | capability | CAP-REPORT-001 | shipped | 2026-09-12 | 2026-09-12 | reporting |
 | task | TASK-ACCOUNT-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
@@ -68,5 +68,4 @@ _Generated from capability and task frontmatter._
 
 ## Evidence Checks
 
-- capabilities/CAP-LOCATION-001.md: missing started date
-- capabilities/CAP-LOCATION-001.md: missing completed date
+- No shipped-item evidence problems detected.

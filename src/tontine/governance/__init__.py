@@ -56,7 +56,7 @@ class Ruleset:
     ruleset_id: str
     version: int
     effective_cycle: int
-    rules: dict[str, Any]
+    rules: Mapping[str, Any]
 
     def __post_init__(self) -> None:
         if not self.ruleset_id.strip():

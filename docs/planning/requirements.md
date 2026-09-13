@@ -64,6 +64,17 @@ and reject invalid transitions.
 The package must represent member, treasurer, and administrator roles without
 implementing application authentication.
 
+### FR-LOC-001 - Support optional group jurisdiction metadata
+
+The package may record an optional ISO 3166-1 alpha-2 jurisdiction for a group;
+the field is metadata only and does not perform compliance or regulatory checks.
+
+### FR-LOC-002 - Support optional member residence metadata
+
+The package may record an optional ISO 3166-1 alpha-2 residence country for a
+member; the field is metadata only and does not perform identity verification,
+tax classification, or regulatory checks.
+
 ## Contribution Engine
 
 ### FR-CON-001 - Define contribution rules

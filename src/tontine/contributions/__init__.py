@@ -70,15 +70,18 @@ class PenaltyDestination(StrEnum):
     ADMINISTRATION_FUND = "administration_fund"
 
 
-def _decimal_amount(value: Decimal | int | str) -> Decimal:
+def _decimal_amount(
+    value: Decimal | int | str,
+    label: str = "Contribution amount",
+) -> Decimal:
     try:
         amount = Decimal(str(value))
     except (InvalidOperation, ValueError) as exc:
-        raise ValueError("Contribution amount must be a valid decimal.") from exc
+        raise ValueError(f"{label} must be a valid decimal.") from exc
     if not amount.is_finite():
-        raise ValueError("Contribution amount must be finite.")
+        raise ValueError(f"{label} must be finite.")
     if amount < 0:
-        raise ValueError("Contribution amount must be non-negative.")
+        raise ValueError(f"{label} must be non-negative.")
     return amount
 
 
@@ -126,7 +129,11 @@ class ContributionRule:
         if self.grace_period_days < 0:
             raise ValueError("Grace period cannot be negative.")
         if self.late_penalty is not None:
-            object.__setattr__(self, "late_penalty", _decimal_amount(self.late_penalty))
+            object.__setattr__(
+                self,
+                "late_penalty",
+                _decimal_amount(self.late_penalty, "Late penalty"),
+            )
         self._validate_due_convention()
 
     def _validate_due_convention(self) -> None:
@@ -173,7 +180,7 @@ class Penalty:
         object.__setattr__(self, "reason", PenaltyReason(self.reason))
         object.__setattr__(self, "status", PenaltyStatus(self.status))
         object.__setattr__(self, "destination", PenaltyDestination(self.destination))
-        object.__setattr__(self, "amount", _decimal_amount(self.amount))
+        object.__setattr__(self, "amount", _decimal_amount(self.amount, "Penalty"))
         if self.assessed_on.tzinfo is None or self.assessed_on.utcoffset() is None:
             raise ValueError("Penalty timestamps must be timezone-aware.")
 
@@ -309,7 +316,11 @@ class ContributionCycle:
                 f"cycle {self.cycle_id!r}."
             )
         expected = self.expected_contributions[member_id]
-        actual = None if actual_amount is None else _decimal_amount(actual_amount)
+        actual = (
+            None
+            if actual_amount is None
+            else _decimal_amount(actual_amount, "Contribution amount")
+        )
         reference_date = as_of or payment_date or datetime.now().astimezone()
         status = self._derive_status(expected, actual, payment_date, reference_date)
         penalty, penalty_record = self._derive_penalty(

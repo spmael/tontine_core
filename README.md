@@ -83,7 +83,7 @@ cycle = tontine.create_contribution_cycle(
 ### Members and contributions
 
 ```python
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
 from tontine.contributions import ContributionCycle

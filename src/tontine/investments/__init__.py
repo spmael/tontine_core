@@ -426,9 +426,16 @@ class InvestmentValuation:
         return _non_negative(units, "Member units") * self.unit_price
 
     def member_ownership_percentage(self, units: Decimal | int | str) -> Decimal:
-        """Return a member's percentage of total outstanding units."""
+        """Return a member's percentage of total outstanding units.
+
+        Raises:
+            ValueError: If units are negative or exceed total outstanding units.
+        """
+        normalized_units = _non_negative(units, "Member units")
+        if normalized_units > self.units_outstanding:
+            raise ValueError("Member units cannot exceed total outstanding units.")
         return (
-            _non_negative(units, "Member units")
+            normalized_units
             / self.units_outstanding
             * Decimal("100")
         )

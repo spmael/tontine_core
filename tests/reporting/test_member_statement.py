@@ -81,3 +81,25 @@ def test_member_statement_rejects_blank_identity_and_invalid_penalties() -> None
         build_member_statement(
             "member-1", "Member", "JPY", (), (), investment, penalties=Decimal("-1")
         )
+
+
+def test_member_statement_rejects_mixed_currencies_for_derived_penalties() -> None:
+    investment = InvestmentSummary(Decimal("0"), Decimal("0"), Decimal("0"), "JPY")
+    with pytest.raises(ValueError, match="currencies"):
+        build_member_statement(
+            "member-1",
+            "Member",
+            "JPY",
+            (
+                ContributionSummary(
+                    "cycle-1",
+                    Decimal("1"),
+                    Decimal("1"),
+                    "paid",
+                    "EUR",
+                    Decimal("1"),
+                ),
+            ),
+            (),
+            investment,
+        )

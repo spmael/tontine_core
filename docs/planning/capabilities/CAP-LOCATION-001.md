@@ -1,6 +1,8 @@
 ---
 id: CAP-LOCATION-001
 status: shipped
+started: 2026-09-13
+completed: 2026-09-13
 adr_refs: []
 depends_on:
   - CAP-GROUP-001

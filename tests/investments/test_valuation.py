@@ -41,6 +41,9 @@ def test_valuation_rejects_zero_units_and_negative_values() -> None:
     with pytest.raises(ValueError, match="non-negative"):
         InvestmentValuation(Decimal("100"), Decimal("-1"), Decimal("1"))
 
+    with pytest.raises(ValueError, match="exceed"):
+        valuation.member_ownership_percentage(Decimal("2"))
+
 
 def test_valuation_aggregates_currency_matched_liabilities() -> None:
     liabilities = LiabilityRegistry()

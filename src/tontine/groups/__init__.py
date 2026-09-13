@@ -69,6 +69,7 @@ class Group:
             group_id: Non-empty identifier without whitespace.
             name: Display name for the group.
             base_currency: Supported three-letter currency code.
+            jurisdiction: Optional ISO 3166-1 alpha-2 jurisdiction code.
 
         Returns:
             A group in ``draft`` status.

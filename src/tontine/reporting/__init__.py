@@ -160,10 +160,17 @@ def build_member_statement(
     """
     if not member_id.strip() or not display_name.strip():
         raise ValueError("Member statement identity is required.")
+    reporting_currency = CurrencyCode(base_currency)
+    if penalties is None and any(
+        item.currency != reporting_currency for item in contributions
+    ):
+        raise ValueError(
+            "Contribution penalty currencies must match the base currency."
+        )
     return MemberStatement(
         member_id=member_id,
         display_name=display_name,
-        base_currency=CurrencyCode(base_currency),
+        base_currency=reporting_currency,
         contributions=tuple(contributions),
         payouts=tuple(payouts),
         investment=investment,

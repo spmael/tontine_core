@@ -78,6 +78,8 @@ class Member:
             member_id: Non-empty identifier without whitespace.
             display_name: Human-readable member name.
             role: Explicit role within the tontine.
+            membership_start_date: Date the membership begins.
+            residence_country: Optional ISO 3166-1 alpha-2 residence code.
 
         Returns:
             A member in ``invited`` status.
