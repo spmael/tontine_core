@@ -174,7 +174,7 @@ does not retrieve market prices or FX rates automatically.
 
 ### 5.7 Governance and audit
 
-Rulesets are immutable versions with positive versions and effective cycles.
+Rulesets are versioned records with positive versions and effective cycles.
 Rotation proposals validate eligible proposers, candidate member order, approval
 thresholds, cycle numbers, and timezone-aware dates.
 
