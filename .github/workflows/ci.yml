@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        run: python -m pip install uv
+
+      - name: Install locked dependencies
+        run: uv sync --locked
+
+      - name: Run tests with coverage
+        run: uv run pytest --cov=tontine --cov-report=term-missing
+
+      - name: Check lint
+        run: uv run ruff check src tests
+
+      - name: Check types
+        run: uv run mypy src
+
+      - name: Build distributions
+        run: uv build
