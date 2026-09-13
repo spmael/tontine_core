@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
-from typing import Any
+from types import MappingProxyType
+from typing import Any, Mapping
 
 from tontine.audit import AuditEvent, AuditEventRegistry
 from tontine.classic import ClassicRotation
@@ -38,14 +39,14 @@ class Ruleset:
     ruleset_id: str
     version: int
     effective_cycle: int
-    rules: dict[str, Any]
+    rules: Mapping[str, Any]
 
     def __post_init__(self) -> None:
         if not self.ruleset_id.strip():
             raise ValueError("Ruleset identifier is required.")
         if self.version < 1 or self.effective_cycle < 1:
             raise ValueError("Ruleset version and effective cycle must be positive.")
-        object.__setattr__(self, "rules", dict(self.rules))
+        object.__setattr__(self, "rules", MappingProxyType(dict(self.rules)))
 
 
 @dataclass

@@ -205,3 +205,14 @@ def test_rulesets_are_versioned_by_effective_cycle(
         Ruleset("", 1, 1, {})
     with pytest.raises(ValueError, match="positive"):
         Ruleset("rules-invalid", 0, 1, {})
+
+
+def test_ruleset_rules_mapping_is_immutable() -> None:
+    source_rules = {"contribution_amount": "30000"}
+    ruleset = Ruleset("rules-v1", 1, 1, source_rules)
+
+    source_rules["contribution_amount"] = "35000"
+
+    assert ruleset.rules["contribution_amount"] == "30000"
+    with pytest.raises(TypeError):
+        ruleset.rules["contribution_amount"] = "40000"
