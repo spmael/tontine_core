@@ -30,7 +30,7 @@ without broker access or investment execution.
 ## Domain Boundary
 
 - Inputs: allocation rules, asset definitions, transactions, valuations, liabilities, units, supplied FX rates
-- Outputs: investment records, asset values, NAV, unit prices, member ownership
+- Outputs: investment records, liability totals, valuation results, NAV, unit prices, member ownership
 - Invariants: percentages are explicit and valid; monetary values use Decimal; FX rates are supplied and timestamped; ownership calculations are deterministic
 - Exclusions: broker connectivity, market-data retrieval, investment execution, custody, and external FX calls from the core
 
@@ -38,8 +38,9 @@ without broker access or investment execution.
 
 - [x] Define configurable allocation categories and percentages.
 - [x] Record cash, assets, purchases, sales, income, fees, and manual valuations.
-- [x] Calculate assets, liabilities, NAV, unit price, and member ownership.
-- [x] Issue and track member units deterministically.
+- [x] Calculate NAV, unit price, member value, and ownership percentage from supplied totals and unit balances.
+- [x] Aggregate recorded liabilities by currency for valuation.
+- [x] Issue and redeem member units deterministically.
 - [x] Convert multi-currency asset values only with supplied, auditable FX rates.
 
 ## Implementation Tasks

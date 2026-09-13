@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
 from tontine.currencies import CurrencyCode
+from tontine.investments import InvestmentValuation
 
 
 def _amount(value: Decimal | int | str, label: str) -> Decimal:
@@ -30,6 +31,7 @@ class ContributionSummary:
     actual_amount: Decimal | None
     status: str
     currency: CurrencyCode
+    penalty: Decimal = Decimal("0")
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -44,6 +46,11 @@ class ContributionSummary:
                 _amount(self.actual_amount, "Actual contribution"),
             )
         object.__setattr__(self, "currency", CurrencyCode(str(self.currency)))
+        object.__setattr__(
+            self,
+            "penalty",
+            _amount(self.penalty, "Contribution penalty"),
+        )
 
 
 @dataclass(frozen=True)
@@ -82,6 +89,24 @@ class InvestmentSummary:
         )
         object.__setattr__(self, "currency", CurrencyCode(str(self.currency)))
 
+    @classmethod
+    def from_valuation(
+        cls,
+        valuation: InvestmentValuation,
+        units: Decimal | int | str,
+        currency: str,
+    ) -> InvestmentSummary:
+        """Build ownership and value fields from an investment valuation."""
+        normalized_units = _amount(units, "Investment units")
+        return cls(
+            units=normalized_units,
+            ownership_percentage=valuation.member_ownership_percentage(
+                normalized_units
+            ),
+            attributable_value=valuation.member_value(normalized_units),
+            currency=CurrencyCode(currency),
+        )
+
 
 @dataclass(frozen=True)
 class MemberStatement:
@@ -109,7 +134,6 @@ class MemberStatement:
             Decimal("0"),
         )
 
-
 def build_member_statement(
     member_id: str,
     display_name: str,
@@ -117,7 +141,7 @@ def build_member_statement(
     contributions: Sequence[ContributionSummary],
     payouts: Sequence[PayoutSummary],
     investment: InvestmentSummary,
-    penalties: Decimal | int | str = Decimal("0"),
+    penalties: Decimal | int | str | None = None,
 ) -> MemberStatement:
     """Build a deterministic member statement from supplied domain records.
 
@@ -128,7 +152,8 @@ def build_member_statement(
         contributions: Contribution history records.
         payouts: Historical payout records.
         investment: Units, ownership, and attributable value summary.
-        penalties: Supplied penalty amount in the reporting currency.
+        penalties: Optional supplied penalty total. When omitted, it is derived
+            from contribution summaries.
 
     Returns:
         An immutable structured statement; no rendering is performed.
@@ -142,7 +167,15 @@ def build_member_statement(
         contributions=tuple(contributions),
         payouts=tuple(payouts),
         investment=investment,
-        penalties=_amount(penalties, "Penalties"),
+        penalties=_amount(
+            sum(
+                (item.penalty for item in contributions),
+                Decimal("0"),
+            )
+            if penalties is None
+            else penalties,
+            "Penalties",
+        ),
     )
 
 
@@ -161,6 +194,7 @@ class GroupStatement:
     liabilities: Decimal
     historical_payouts: tuple[PayoutSummary, ...]
     pending_proposals: tuple[str, ...]
+    penalties: Decimal = Decimal("0")
 
     @property
     def outstanding_contributions(self) -> Decimal:
@@ -188,6 +222,7 @@ def build_group_statement(
     liabilities: Decimal | int | str,
     historical_payouts: Sequence[PayoutSummary],
     pending_proposals: Sequence[str],
+    penalties: Decimal | int | str = Decimal("0"),
 ) -> GroupStatement:
     """Build a deterministic group statement from supplied domain records.
 
@@ -232,6 +267,7 @@ def build_group_statement(
         liabilities=_amount(liabilities, "Liabilities"),
         historical_payouts=tuple(historical_payouts),
         pending_proposals=tuple(pending_proposals),
+        penalties=_amount(penalties, "Penalties"),
     )
 
 

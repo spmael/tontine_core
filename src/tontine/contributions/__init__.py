@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -45,6 +45,29 @@ class ContributionStatus(StrEnum):
     PARTIAL = "partial"
     LATE = "late"
     MISSED = "missed"
+
+
+class PenaltyReason(StrEnum):
+    """Reasons supported for automatically assessed contribution penalties."""
+
+    LATE_CONTRIBUTION = "late_contribution"
+    MISSED_CONTRIBUTION = "missed_contribution"
+
+
+class PenaltyStatus(StrEnum):
+    """Lifecycle state of an assessed penalty."""
+
+    UNPAID = "unpaid"
+
+
+class PenaltyDestination(StrEnum):
+    """Group destination assigned to assessed penalty money."""
+
+    COMMON_RESERVE = "common_reserve"
+    DISTRIBUTE_AT_CYCLE_END = "distribute_at_cycle_end"
+    SOCIAL_FUND = "social_fund"
+    COMPENSATE_AFFECTED_MEMBER = "compensate_affected_member"
+    ADMINISTRATION_FUND = "administration_fund"
 
 
 def _decimal_amount(value: Decimal | int | str) -> Decimal:
@@ -133,6 +156,29 @@ class ContributionRule:
 
 
 @dataclass(frozen=True)
+class Penalty:
+    """Immutable penalty assessment kept separate from a contribution amount."""
+
+    member_id: str
+    cycle_id: str
+    reason: PenaltyReason
+    amount: Decimal
+    assessed_on: datetime
+    status: PenaltyStatus = PenaltyStatus.UNPAID
+    destination: PenaltyDestination = PenaltyDestination.COMMON_RESERVE
+
+    def __post_init__(self) -> None:
+        if not self.member_id.strip() or not self.cycle_id.strip():
+            raise ValueError("Penalty member and cycle identifiers are required.")
+        object.__setattr__(self, "reason", PenaltyReason(self.reason))
+        object.__setattr__(self, "status", PenaltyStatus(self.status))
+        object.__setattr__(self, "destination", PenaltyDestination(self.destination))
+        object.__setattr__(self, "amount", _decimal_amount(self.amount))
+        if self.assessed_on.tzinfo is None or self.assessed_on.utcoffset() is None:
+            raise ValueError("Penalty timestamps must be timezone-aware.")
+
+
+@dataclass(frozen=True)
 class Contribution:
     """Record one member contribution without initiating payment."""
 
@@ -144,6 +190,8 @@ class Contribution:
     status: ContributionStatus
     external_reference: str | None = None
     notes: str | None = None
+    penalty: Decimal = Decimal("0")
+    penalty_record: Penalty | None = None
 
 
 @dataclass
@@ -157,12 +205,17 @@ class ContributionCycle:
     status: CycleStatus = CycleStatus.SCHEDULED
     expected_contributions: dict[str, Decimal] = field(default_factory=dict)
     recorded_contributions: dict[str, Contribution] = field(default_factory=dict)
+    grace_period_days: int = 0
+    late_penalty: Decimal = Decimal("0")
 
     def __post_init__(self) -> None:
         if not self.cycle_id.strip():
             raise ValueError("Cycle identifier is required.")
         _zone_info(self.timezone)
         self.status = CycleStatus(self.status)
+        if self.grace_period_days < 0:
+            raise ValueError("Grace period cannot be negative.")
+        self.late_penalty = _decimal_amount(self.late_penalty)
 
     def add_expected_contribution(
         self,
@@ -205,6 +258,23 @@ class ContributionCycle:
         """Return expected less received, never below zero."""
         return max(self.expected_total - self.received_total, Decimal("0"))
 
+    @property
+    def penalties_total(self) -> Decimal:
+        """Return penalties assessed for late or missed contributions."""
+        return sum(
+            (record.penalty for record in self.recorded_contributions.values()),
+            Decimal("0"),
+        )
+
+    def penalty_for(self, member_id: str) -> Decimal:
+        """Return the assessed penalty for one recorded contribution."""
+        try:
+            return self.recorded_contributions[member_id].penalty
+        except KeyError as exc:
+            raise KeyError(
+                f"No contribution is recorded for {member_id!r}."
+            ) from exc
+
     def record_contribution(
         self,
         member_id: str,
@@ -242,6 +312,9 @@ class ContributionCycle:
         actual = None if actual_amount is None else _decimal_amount(actual_amount)
         reference_date = as_of or payment_date or datetime.now().astimezone()
         status = self._derive_status(expected, actual, payment_date, reference_date)
+        penalty, penalty_record = self._derive_penalty(
+            member_id, actual, payment_date, reference_date
+        )
         contribution = Contribution(
             member_id=member_id,
             cycle_id=self.cycle_id,
@@ -251,6 +324,8 @@ class ContributionCycle:
             status=status,
             external_reference=external_reference,
             notes=notes,
+            penalty=penalty,
+            penalty_record=penalty_record,
         )
         self.recorded_contributions[member_id] = contribution
         return contribution
@@ -262,7 +337,7 @@ class ContributionCycle:
         payment_date: datetime | None,
         as_of: datetime,
     ) -> ContributionStatus:
-        late_date = self.due_date
+        late_date = self.due_date + timedelta(days=self.grace_period_days)
         payment_local_date = (
             None if payment_date is None else _local_date(payment_date, self.timezone)
         )
@@ -279,11 +354,45 @@ class ContributionCycle:
             return ContributionStatus.LATE
         return ContributionStatus.PAID
 
+    def _derive_penalty(
+        self,
+        member_id: str,
+        actual: Decimal | None,
+        payment_date: datetime | None,
+        as_of: datetime,
+    ) -> tuple[Decimal, Penalty | None]:
+        threshold = self.due_date + timedelta(days=self.grace_period_days)
+        payment_local_date = (
+            None if payment_date is None else _local_date(payment_date, self.timezone)
+        )
+        late = (
+            payment_local_date is not None and payment_local_date > threshold
+        ) or (actual is None and _local_date(as_of, self.timezone) > threshold)
+        if not late or self.late_penalty == 0:
+            return Decimal("0"), None
+        reason = (
+            PenaltyReason.MISSED_CONTRIBUTION
+            if actual is None
+            else PenaltyReason.LATE_CONTRIBUTION
+        )
+        penalty = Penalty(
+            member_id=member_id,
+            cycle_id=self.cycle_id,
+            reason=reason,
+            amount=self.late_penalty,
+            assessed_on=payment_date or as_of,
+        )
+        return penalty.amount, penalty
+
 
 __all__ = [
     "Contribution",
     "ContributionCycle",
     "ContributionFrequency",
+    "Penalty",
+    "PenaltyDestination",
+    "PenaltyReason",
+    "PenaltyStatus",
     "ContributionRule",
     "ContributionStatus",
     "CycleStatus",

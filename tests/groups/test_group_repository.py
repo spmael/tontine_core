@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 import pytest
 
 from tontine.exceptions import DuplicateGroupError
@@ -23,7 +25,7 @@ def test_repository_adds_and_gets_members_by_identifier() -> None:
     """Members are retrievable from a repository keyed by group and member ID."""
     repo = GroupRepository()
     group = Group.create_draft("grp-200", "Member Group", "USD")
-    member = Member.create("member-200", "Amina", MemberRole.MEMBER)
+    member = Member.create("member-200", "Amina", MemberRole.MEMBER, date(2027, 1, 1))
     repo.add_group(group)
 
     repo.add_member("grp-200", member)

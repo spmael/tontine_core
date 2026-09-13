@@ -25,15 +25,15 @@ while preserving a traceable audit history.
 
 ## Domain Boundary
 
-- Inputs: proposals, member votes, thresholds, effective dates, audit events
+- Inputs: proposals, member votes, thresholds, effective cycles, audit events
 - Outputs: versioned decisions, approved rotation orders, audit records
-- Invariants: decisions follow explicit thresholds; historical decisions remain immutable and traceable
+- Invariants: decisions follow explicit thresholds; approved rotations remain immutable and traceable
 - Exclusions: authentication, legal identity verification, external signatures, and regulatory compliance decisions
 
 ## Acceptance Criteria
 
-- [x] Version group rules with effective dates.
-- [x] Create and transition proposals.
+- [x] Version group rules with effective cycles.
+- [x] Create, open, and evaluate proposals.
 - [x] Record one-member-one-vote decisions and approval thresholds.
 - [x] Approve rotation changes without mutating historical rotations.
 - [x] Preserve significant governance and financial audit events.
@@ -45,5 +45,5 @@ while preserving a traceable audit history.
 
 ## Verification
 
-- Unit tests cover proposal lifecycle, vote thresholds, effective dates, rotation history, and audit events.
+- Unit tests cover the implemented proposal lifecycle, vote thresholds, effective cycles, rotation history, and audit events.
 - Boundary review confirms no authentication or external signature system is introduced.

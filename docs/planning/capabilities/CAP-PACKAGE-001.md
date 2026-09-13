@@ -12,6 +12,7 @@ blocks:
 requirements:
   - FR-PKG-001
   - NFR-PKG-001
+  - NFR-SCP-001
 owner: package-foundation
 ---
 
@@ -28,7 +29,9 @@ quality-check workflow.
 - Inputs: package metadata, Python version, source files, test configuration
 - Outputs: importable `tontine` package and installable `tontine-core` distribution
 - Invariants: import name and distribution name remain distinct and stable
-- Exclusions: domain behavior, persistence, web frameworks, and database setup
+- Exclusions: custody, payment initiation, broker execution, automated FX,
+  lending, tax calculation, KYC/AML, market-data feeds, regulatory reporting,
+  domain behavior, persistence, web frameworks, and database setup
 
 ## Acceptance Criteria
 

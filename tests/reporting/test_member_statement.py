@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import pytest
 
+from tontine.investments import InvestmentValuation
 from tontine.reporting import (
     ContributionSummary,
     InvestmentSummary,
@@ -38,6 +39,14 @@ def test_member_statement_contains_history_outstanding_payouts_and_ownership() -
     assert statement.investment.currency == "EUR"
 
 
+def test_investment_summary_derives_ownership_and_value_from_valuation() -> None:
+    valuation = InvestmentValuation(Decimal("1000"), Decimal("100"), Decimal("10"))
+    summary = InvestmentSummary.from_valuation(valuation, Decimal("2"), "EUR")
+
+    assert summary.ownership_percentage == Decimal("20")
+    assert summary.attributable_value == Decimal("180")
+
+
 def test_member_statement_preserves_fractional_currency_and_penalties() -> None:
     statement = build_member_statement(
         member_id="member-x",
@@ -45,12 +54,16 @@ def test_member_statement_preserves_fractional_currency_and_penalties() -> None:
         base_currency="EUR",
         contributions=(
             ContributionSummary(
-                "2027-01", Decimal("100.25"), Decimal("99.75"), "partial", "EUR"
+                "2027-01",
+                Decimal("100.25"),
+                Decimal("99.75"),
+                "partial",
+                "EUR",
+                Decimal("0.50"),
             ),
         ),
         payouts=(),
         investment=InvestmentSummary(Decimal("0"), Decimal("0"), Decimal("0"), "XAF"),
-        penalties=Decimal("0.50"),
     )
 
     assert statement.outstanding_total == Decimal("0.50")

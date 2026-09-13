@@ -93,11 +93,15 @@ datetimes where required, and `decimal.Decimal` for financial amounts.
 ### 5.1 Groups and members
 
 A group requires a non-empty identifier, a non-blank name, and a valid ISO 4217
-base currency. Group identifiers cannot contain whitespace.
+base currency. Group identifiers cannot contain whitespace. An optional group
+jurisdiction may be recorded as a validated ISO 3166-1 alpha-2 country code.
 
 Members require a non-empty identifier, a non-blank display name, and an explicit
 role. Member identifiers cannot contain whitespace. Supported roles are member,
-treasurer, and administrator.
+treasurer, and administrator. Each member also records an explicit membership
+start date. An optional residence country may be recorded as a validated ISO
+3166-1 alpha-2 country code. These fields are metadata only and do not perform
+identity verification, tax classification, or regulatory decisions.
 
 Supported membership states are invited, active, suspended, left, and removed.
 Invalid state transitions are rejected with domain errors.
@@ -110,10 +114,18 @@ penalty, effective date, and IANA timezone.
 
 Contribution cycles validate their identifier and timezone and maintain expected
 and recorded contributions. Contribution status is derived from expected amount,
-actual amount, payment date, cycle due date, and the cycle timezone.
+actual amount, payment date, cycle due date, and the cycle timezone. A cycle does
+not currently attach a payout or allocation record. A configured fixed penalty is
+assessed after the due date plus the configured grace period for late or missed
+contributions.
 
 Duplicate contribution records are rejected unless an explicit adjustment is
-requested. Payment processing is outside the package.
+requested. Penalties are separate from contribution amounts and do not increase
+contribution totals or investment units. Each assessment records its member,
+cycle, reason, amount, timezone-aware assessment time, unpaid status, and
+destination. `COMMON_RESERVE` is the default destination. Payment processing,
+penalty settlement, waivers, and ledger posting for penalties are outside the
+current package behavior.
 
 ### 5.3 Classic rotation and payouts
 
@@ -152,21 +164,31 @@ Allocation rules contain named categories whose non-negative percentages total
 exactly 100. Scheduled rules can be bounded, replaced, or cancelled by effective
 cycle.
 
-Investment assets and activities use explicit currencies and manually supplied
-provenance. Supported activity categories are purchase, sale, income, and fee.
-Manual valuations require a non-negative value, effective date, and source.
+Investment assets use explicit currencies. Investment activities, manual
+valuations, and liabilities include manually supplied provenance. Supported
+activity categories are purchase, sale, income, and fee. Manual valuations and
+liabilities require non-negative values, effective dates, and sources.
 
-Member unit balances are maintained by issue and redemption operations. Unit prices
-must be positive for issuance, redemption cannot exceed a member balance, and
-duplicate unit event identifiers are rejected.
+Member unit balances are derived from issue and redemption events. Unit
+distributions are not currently modeled. The unit ledger calculates each
+member's ownership percentage from their balance divided by total outstanding
+units. Unit prices must be positive for issuance, redemption cannot exceed a
+member balance, and duplicate unit event identifiers are rejected.
 
-Investment valuation derives:
+Investment valuation accepts caller-supplied asset and unit totals, or a
+liability registry for currency-matched liability aggregation, and derives:
 
 ```text
 NAV = assets - liabilities
 unit price = NAV / units outstanding
 member value = member units * unit price
+ownership percentage = member units / total units * 100
 ```
+
+Liability registries reject duplicate identifiers and aggregate recorded
+liabilities by currency. Asset and investment-activity aggregation remains the
+responsibility of the caller; the current package does not derive total assets
+from activity records.
 
 FX rates are supplied data. The package validates currency pairs, positive rates,
 timezone-aware timestamps, sources, and caller-provided freshness policies. It
@@ -174,14 +196,17 @@ does not retrieve market prices or FX rates automatically.
 
 ### 5.7 Governance and audit
 
-Rulesets are versioned records with positive versions and effective cycles.
+Rulesets are immutable versions with positive versions and effective cycles. The
+current implementation resolves rulesets by effective cycle; it does not attach
+ruleset identifiers to historical financial or audit events.
 Rotation proposals validate eligible proposers, candidate member order, approval
 thresholds, cycle numbers, and timezone-aware dates.
 
 Governance supports draft and open proposals, one-member-one-vote choices of yes,
 no, and abstain, duplicate-vote prevention, threshold evaluation, and effective
-rotation selection. Governance actions are recorded in an append-only audit
-registry.
+rotation selection. Approval evaluation produces approved or rejected status;
+expire and cancel transitions are not currently implemented. Governance actions
+are recorded in an append-only audit registry.
 
 Audit events require identifiers, aggregate information, and timezone-aware
 occurrence times. Event details are preserved as read-only mappings.
@@ -189,11 +214,12 @@ occurrence times. Event details are preserved as read-only mappings.
 ### 5.8 Reporting
 
 Member statements expose structured contribution history, payouts, investment
-summaries, penalties, and outstanding contribution totals.
+summaries, penalties, and outstanding contribution totals. Penalties may be
+derived from contribution summaries and remain separate from contributions.
 
 Group statements expose active members, current cycle, expected and received
 contributions, cash, investment value, liabilities, historical payouts, pending
-proposals, outstanding contributions, and NAV.
+proposals, penalties, outstanding contributions, and NAV.
 
 Reporting objects do not render PDF, Excel, HTML, or web pages. Presentation is
 the responsibility of the consuming application.

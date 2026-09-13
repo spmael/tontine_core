@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
@@ -17,15 +17,17 @@ from tontine.repositories import (
 
 def test_member_repository_has_duplicate_and_ordering_semantics() -> None:
     repository = InMemoryMemberRepository()
-    repository.add(Member.create("member-b", "B", MemberRole.MEMBER))
-    repository.add(Member.create("member-a", "A", MemberRole.MEMBER))
+    repository.add(Member.create("member-b", "B", MemberRole.MEMBER, date(2027, 1, 1)))
+    repository.add(Member.create("member-a", "A", MemberRole.MEMBER, date(2027, 1, 1)))
 
     assert [member.member_id for member in repository.list()] == [
         "member-a",
         "member-b",
     ]
     with pytest.raises(ValueError, match="already"):
-        repository.add(Member.create("member-a", "A2", MemberRole.MEMBER))
+        repository.add(
+            Member.create("member-a", "A2", MemberRole.MEMBER, date(2027, 1, 1))
+        )
 
 
 def test_classic_repository_preserves_rotations_and_payout_order() -> None:

@@ -45,10 +45,12 @@ def test_empty_group_statement_is_deterministic() -> None:
         liabilities=Decimal("0"),
         historical_payouts=(),
         pending_proposals=(),
+        penalties=Decimal("50"),
     )
 
     assert statement.outstanding_contributions == Decimal("0")
     assert statement.nav == Decimal("0")
+    assert statement.penalties == Decimal("50")
 
 
 def test_group_statement_rejects_blank_identity_and_invalid_amounts() -> None:

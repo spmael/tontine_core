@@ -27,13 +27,14 @@ validated domain operations.
 
 - Inputs: group identity, base currency, member identity, role, status
 - Outputs: tontine and member entities
-- Invariants: identifiers are unique; status transitions are valid; roles are explicit
+- Invariants: identifiers are unique; status transitions are valid; roles and membership start dates are explicit
 - Exclusions: authentication, identity verification, and persistence adapters
 
 ## Acceptance Criteria
 
 - [x] Create a draft tontine with a valid ISO currency code.
 - [x] Add members with unique identifiers and explicit roles.
+- [x] Record an explicit membership start date for each member.
 - [x] Reject duplicate member identifiers.
 - [x] Enforce valid membership status transitions.
 - [x] Expose deterministic, framework-independent domain behavior.

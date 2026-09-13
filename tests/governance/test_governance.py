@@ -207,12 +207,17 @@ def test_rulesets_are_versioned_by_effective_cycle(
         Ruleset("rules-invalid", 0, 1, {})
 
 
-def test_ruleset_rules_mapping_is_immutable() -> None:
-    source_rules = {"contribution_amount": "30000"}
-    ruleset = Ruleset("rules-v1", 1, 1, source_rules)
+def test_rulesets_freeze_nested_rule_values() -> None:
+    source = {"policy": {"threshold": 1}, "steps": ["review", "approve"]}
+    ruleset = Ruleset("rules-immutable", 1, 1, source)
+    source["policy"]["threshold"] = 2
+    source["steps"].append("publish")
 
-    source_rules["contribution_amount"] = "35000"
-
-    assert ruleset.rules["contribution_amount"] == "30000"
+    assert ruleset.rules["policy"]["threshold"] == 1
+    assert ruleset.rules["steps"] == ("review", "approve")
     with pytest.raises(TypeError):
-        ruleset.rules["contribution_amount"] = "40000"
+        policy = ruleset.rules["policy"]
+        policy["threshold"] = 2
+    with pytest.raises(AttributeError):
+        steps = ruleset.rules["steps"]
+        steps.append("publish")

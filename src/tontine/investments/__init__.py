@@ -10,6 +10,7 @@ from typing import Protocol
 
 from tontine.audit import AuditEventRegistry
 from tontine.currencies import CurrencyCode
+from tontine.exceptions import DuplicateInvestmentEventError
 
 
 def _decimal_value(value: Decimal | int | str, label: str) -> Decimal:
@@ -316,8 +317,6 @@ class InvestmentActivityRegistry:
         Raises:
             DuplicateInvestmentEventError: If the event ID already exists.
         """
-        from tontine.exceptions import DuplicateInvestmentEventError
-
         if event_id in self._activities:
             raise DuplicateInvestmentEventError(
                 f"Investment event {event_id!r} is already recorded."
@@ -334,6 +333,52 @@ class InvestmentActivityRegistry:
         )
         self._activities[event_id] = activity
         return activity
+
+
+@dataclass(frozen=True)
+class Liability:
+    """Record a manually supplied group liability in an explicit currency."""
+
+    liability_id: str
+    amount: Decimal
+    currency: CurrencyCode
+    effective_date: date
+    source: str
+
+    def __post_init__(self) -> None:
+        if not self.liability_id.strip():
+            raise ValueError("Liability identifier is required.")
+        if not self.source.strip():
+            raise ValueError("Liability source is required.")
+        object.__setattr__(self, "amount", _non_negative(self.amount, "Liability"))
+        object.__setattr__(self, "currency", CurrencyCode(str(self.currency)))
+
+
+class LiabilityRegistry:
+    """Aggregate immutable, manually supplied liabilities by currency."""
+
+    def __init__(self) -> None:
+        self._liabilities: dict[str, Liability] = {}
+
+    def record(self, liability: Liability) -> None:
+        """Record a liability and reject duplicate identifiers."""
+        if liability.liability_id in self._liabilities:
+            raise ValueError(
+                f"Liability {liability.liability_id!r} is already recorded."
+            )
+        self._liabilities[liability.liability_id] = liability
+
+    def total(self, currency: str) -> Decimal:
+        """Return liabilities recorded in the requested currency."""
+        expected_currency = CurrencyCode(currency)
+        return sum(
+            (
+                liability.amount
+                for liability in self._liabilities.values()
+                if liability.currency == expected_currency
+            ),
+            Decimal("0"),
+        )
 
 
 @dataclass(frozen=True)
@@ -379,6 +424,29 @@ class InvestmentValuation:
             Units multiplied by the unquantized Decimal unit price.
         """
         return _non_negative(units, "Member units") * self.unit_price
+
+    def member_ownership_percentage(self, units: Decimal | int | str) -> Decimal:
+        """Return a member's percentage of total outstanding units."""
+        return (
+            _non_negative(units, "Member units")
+            / self.units_outstanding
+            * Decimal("100")
+        )
+
+    @classmethod
+    def from_liabilities(
+        cls,
+        assets: Decimal | int | str,
+        liabilities: LiabilityRegistry,
+        currency: str,
+        units_outstanding: Decimal | int | str,
+    ) -> InvestmentValuation:
+        """Create a valuation using liabilities aggregated from a registry."""
+        return cls(
+            assets=_non_negative(assets, "Assets"),
+            liabilities=liabilities.total(currency),
+            units_outstanding=_non_negative(units_outstanding, "Units outstanding"),
+        )
 
 
 class MemberUnitLedger:
@@ -446,6 +514,19 @@ class MemberUnitLedger:
         """Return total outstanding units across members."""
         return sum(self._balances.values(), Decimal("0"))
 
+    def ownership_percentage_for(self, member_id: str) -> Decimal:
+        """Return a member's percentage of total outstanding units."""
+        if self.total_units == 0:
+            return Decimal("0")
+        return self.balance_for(member_id) / self.total_units * Decimal("100")
+
+    def ownership_percentages(self) -> dict[str, Decimal]:
+        """Return ownership percentages for every member with units."""
+        return {
+            member_id: self.ownership_percentage_for(member_id)
+            for member_id in self._balances
+        }
+
     def _record_event(self, event_id: str) -> None:
         if not event_id.strip():
             raise ValueError("Unit event identifier is required.")
@@ -512,6 +593,8 @@ __all__ = [
     "InvestmentActivityRegistry",
     "InvestmentActivityType",
     "InvestmentValuation",
+    "Liability",
+    "LiabilityRegistry",
     "ManualValuation",
     "MemberUnitLedger",
     "ScheduledAllocationRule",
