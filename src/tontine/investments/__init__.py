@@ -450,7 +450,18 @@ class InvestmentValuation:
         *,
         asset_currency: str,
     ) -> InvestmentValuation:
-        """Create a valuation using liabilities aggregated from a registry."""
+        """Create a valuation using liabilities aggregated from a registry.
+
+        Args:
+            assets: Non-negative asset total in the supplied asset currency.
+            liabilities: Registry of manually supplied liabilities.
+            currency: ISO 4217 liability currency to aggregate from the registry.
+            units_outstanding: Positive outstanding unit total for the valuation.
+            asset_currency: ISO 4217 asset currency, which must match ``currency``.
+
+        Raises:
+            ValueError: If the asset and liability currencies do not match.
+        """
         if CurrencyCode(asset_currency) != CurrencyCode(currency):
             raise ValueError(
                 "Asset currency must match liability aggregation currency."
