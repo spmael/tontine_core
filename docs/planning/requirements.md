@@ -46,9 +46,8 @@ retrieve live balances, initiate transfers, or synchronize accounts automaticall
 
 ### FR-GRP-001 - Create a tontine
 
-The package must create a tontine with an identifier, name, description, base
-currency, creation date, status, ruleset reference, contribution frequency,
-contribution amount, and active cycle reference.
+The package must create a tontine with a non-empty identifier, non-blank name,
+and valid ISO 4217 base currency. Group identifiers must reject whitespace.
 
 ### FR-GRP-002 - Manage membership
 
@@ -64,17 +63,6 @@ and reject invalid transitions.
 
 The package must represent member, treasurer, and administrator roles without
 implementing application authentication.
-
-### FR-LOC-001 - Support optional group jurisdiction metadata
-
-The package may record an optional ISO 3166-1 alpha-2 jurisdiction for a group;
-the field must not be required for group creation or used as a payment or
-regulatory decision.
-
-### FR-LOC-002 - Support optional member residence metadata
-
-The package may record an optional ISO 3166-1 alpha-2 residence country for a
-member without implementing identity verification, tax classification, or KYC.
 
 ## Contribution Engine
 
