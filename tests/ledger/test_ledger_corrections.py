@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from tontine.exceptions import DuplicateJournalError
+from tontine.exceptions import DuplicateJournalError, MissingRecordError
 from tontine.ledger import EntryDirection, JournalEntry, LedgerEntry, LedgerRepository
 
 
@@ -83,8 +83,8 @@ def test_reversal_and_adjustment_require_existing_journals() -> None:
     repository = LedgerRepository()
     timestamp = datetime(2027, 1, 20, 12, 0, tzinfo=UTC)
 
-    with pytest.raises(KeyError, match="not found"):
+    with pytest.raises(MissingRecordError, match="not found"):
         repository.reverse("reversal", "missing", timestamp)
 
-    with pytest.raises(KeyError, match="not found"):
+    with pytest.raises(MissingRecordError, match="not found"):
         repository.adjust("adjustment", "missing", (), timestamp, "Correction")

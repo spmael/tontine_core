@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from tontine.exceptions import DuplicateContributionError
+from tontine.exceptions import DuplicateContributionError, MissingRecordError
 from tontine.groups import CurrencyCode
 
 
@@ -283,11 +283,15 @@ class ContributionCycle:
         )
 
     def penalty_for(self, member_id: str) -> Decimal:
-        """Return the assessed penalty for one recorded contribution."""
+        """Return the assessed penalty for one recorded contribution.
+
+        Raises:
+            MissingRecordError: If no contribution is recorded for the member.
+        """
         try:
             return self.recorded_contributions[member_id].penalty
         except KeyError as exc:
-            raise KeyError(
+            raise MissingRecordError(
                 f"No contribution is recorded for {member_id!r}."
             ) from exc
 

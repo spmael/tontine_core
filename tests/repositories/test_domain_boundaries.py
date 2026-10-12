@@ -5,6 +5,7 @@ import pytest
 
 from tontine.audit import AuditEvent
 from tontine.classic import ClassicPayout, ClassicRotation
+from tontine.exceptions import MissingRecordError
 from tontine.governance import RotationProposal, Ruleset
 from tontine.members import Member, MemberRole
 from tontine.repositories import (
@@ -64,7 +65,7 @@ def test_classic_repository_preserves_rotations_and_payout_order() -> None:
                 "payout-1",
             )
         )
-    with pytest.raises(KeyError, match="not found"):
+    with pytest.raises(MissingRecordError, match="not found"):
         repository.get_rotation("missing")
 
 
@@ -106,13 +107,13 @@ def test_governance_and_audit_repositories_store_immutable_records() -> None:
         governance.save_proposal(proposal)
     with pytest.raises(ValueError, match="already"):
         governance.save_ruleset(Ruleset("rules-1", 1, 1, {"amount": "100"}))
-    with pytest.raises(KeyError, match="not found"):
+    with pytest.raises(MissingRecordError, match="not found"):
         governance.get_proposal("missing")
 
 
 def test_member_and_audit_repositories_report_missing_records() -> None:
     member_repository = InMemoryMemberRepository()
-    with pytest.raises(KeyError, match="not found"):
+    with pytest.raises(MissingRecordError, match="not found"):
         member_repository.get("missing")
 
     audit_repository = InMemoryAuditRepository()

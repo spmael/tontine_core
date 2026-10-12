@@ -1,7 +1,7 @@
 ---
 id: CAP-API-002
-status: backlog
-started: null
+status: partial
+started: 2026-10-12
 completed: null
 adr_refs: []
 depends_on:
@@ -27,7 +27,8 @@ record conditions and clear guidance for required timezone-aware datetime values
 - Invariants: expected domain failures do not leak inconsistent built-in lookup
   exceptions; naive datetimes are never silently assigned a timezone
 - Exclusions: application form validation, authentication, implicit UTC
-  conversion, and framework-specific exception types
+  conversion, framework-specific exception types, and retaining `KeyError` as
+  the public missing-record error
 
 ## Acceptance Criteria
 
@@ -40,8 +41,9 @@ record conditions and clear guidance for required timezone-aware datetime values
 
 ## Implementation Tasks
 
-Task decomposition is intentionally deferred until the relevant domain
-boundaries and public error compatibility are reviewed.
+- [x] [TASK-API-003](../tasks/TASK-API-003.md): Standardize missing-record domain errors.
+- [ ] [TASK-API-004](../tasks/TASK-API-004.md): Make timezone validation errors actionable.
+- [ ] [TASK-API-005](../tasks/TASK-API-005.md): Accept explicit audit occurrence times.
 
 ## Verification
 

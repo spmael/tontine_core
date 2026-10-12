@@ -10,7 +10,7 @@ from typing import Protocol
 
 from tontine.audit import AuditEventRegistry
 from tontine.currencies import CurrencyCode
-from tontine.exceptions import DuplicateInvestmentEventError
+from tontine.exceptions import DuplicateInvestmentEventError, MissingRecordError
 
 
 def _decimal_value(value: Decimal | int | str, label: str) -> Decimal:
@@ -148,14 +148,14 @@ class AllocationRuleSchedule:
             from_cycle: First cycle in which the rule no longer applies.
 
         Raises:
-            KeyError: If the rule is not registered.
+            MissingRecordError: If the rule is not registered.
             ValueError: If the cancellation cycle is not after activation.
         """
         if from_cycle < 1:
             raise ValueError("Cancellation cycle must be positive.")
         candidates = [item for item in self._rules if item.rule_id == rule_id]
         if not candidates:
-            raise KeyError(f"Allocation rule {rule_id!r} was not found.")
+            raise MissingRecordError(f"Allocation rule {rule_id!r} was not found.")
         current = max(candidates, key=lambda item: item.effective_cycle)
         if from_cycle <= current.effective_cycle:
             raise ValueError("Cancellation must occur after the rule effective cycle.")
@@ -182,13 +182,15 @@ class AllocationRuleSchedule:
             The latest scheduled rule effective for the cycle.
 
         Raises:
-            KeyError: If no rule is effective for the cycle.
+            MissingRecordError: If no rule is effective for the cycle.
         """
         if cycle_number < 1:
             raise ValueError("Allocation cycle must be positive.")
         applicable = [item for item in self._rules if item.applies_to(cycle_number)]
         if not applicable:
-            raise KeyError(f"No allocation rule is effective for cycle {cycle_number}.")
+            raise MissingRecordError(
+                f"No allocation rule is effective for cycle {cycle_number}."
+            )
         return max(applicable, key=lambda item: item.effective_cycle)
 
     def _record_audit(self, event_type: str, rule_id: str, version: int) -> None:

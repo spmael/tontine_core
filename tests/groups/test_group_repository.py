@@ -6,7 +6,7 @@ from datetime import date
 
 import pytest
 
-from tontine.exceptions import DuplicateGroupError
+from tontine.exceptions import DuplicateGroupError, MissingRecordError
 from tontine.groups import Group, GroupRepository
 from tontine.members import Member, MemberRole
 
@@ -46,9 +46,9 @@ def test_repository_rejects_missing_groups_and_members() -> None:
     """Repository lookups report missing group and member records clearly."""
     repo = GroupRepository()
 
-    with pytest.raises(KeyError, match="not found"):
+    with pytest.raises(MissingRecordError, match="not found"):
         repo.get_group("missing")
 
     repo.add_group(Group.create_draft("grp-301", "Lookup Group", "XOF"))
-    with pytest.raises(KeyError, match="Member"):
+    with pytest.raises(MissingRecordError, match="Member"):
         repo.get_member("grp-301", "missing")

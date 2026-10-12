@@ -5,6 +5,7 @@ import pytest
 
 from tontine.audit import AuditEventRegistry
 from tontine.classic import ClassicRotation
+from tontine.exceptions import MissingRecordError
 from tontine.governance import (
     GovernanceRegistry,
     ProposalStatus,
@@ -101,7 +102,7 @@ def test_governance_rejects_duplicate_and_ineligible_votes(
 def test_governance_rejects_invalid_proposal_lifecycle_and_missing_ids(
     governance: GovernanceRegistry,
 ) -> None:
-    with pytest.raises(KeyError, match="not found"):
+    with pytest.raises(MissingRecordError, match="not found"):
         governance.open_proposal("missing")
     with pytest.raises(ValueError, match="active members"):
         GovernanceRegistry((), ClassicRotation.from_active_members(("member-a",)))
@@ -199,7 +200,7 @@ def test_rulesets_are_versioned_by_effective_cycle(
     empty_governance = GovernanceRegistry(
         ("member-a",), ClassicRotation.from_active_members(("member-a",))
     )
-    with pytest.raises(KeyError, match="No ruleset"):
+    with pytest.raises(MissingRecordError, match="No ruleset"):
         empty_governance.ruleset_for_cycle(1)
     with pytest.raises(ValueError, match="identifier"):
         Ruleset("", 1, 1, {})

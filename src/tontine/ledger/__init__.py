@@ -8,7 +8,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from tontine.currencies import CurrencyCode
-from tontine.exceptions import DuplicateJournalError
+from tontine.exceptions import DuplicateJournalError, MissingRecordError
 
 
 class LedgerAccountId(str):
@@ -143,6 +143,9 @@ class InMemoryLedgerRepository:
 
         Returns:
             The immutable reversal journal.
+
+        Raises:
+            MissingRecordError: If the original journal is not posted.
         """
         original = self._journal_for(original_journal_id)
         reversal = JournalEntry(
@@ -187,6 +190,9 @@ class InMemoryLedgerRepository:
 
         Returns:
             The immutable adjustment journal.
+
+        Raises:
+            MissingRecordError: If the original journal is not posted.
         """
         self._journal_for(original_journal_id)
         adjustment = JournalEntry(
@@ -208,7 +214,7 @@ class InMemoryLedgerRepository:
                 if journal.journal_id == journal_id
             )
         except StopIteration as exc:
-            raise KeyError(f"Journal {journal_id!r} was not found.") from exc
+            raise MissingRecordError(f"Journal {journal_id!r} was not found.") from exc
 
     def balance_for(self, account_id: str, currency: str) -> Decimal:
         """Derive an account balance from posted entries in one currency."""

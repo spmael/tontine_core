@@ -3,6 +3,7 @@ from decimal import Decimal
 import pytest
 
 from tontine.audit import AuditEventRegistry
+from tontine.exceptions import MissingRecordError
 from tontine.investments import AllocationRule, AllocationRuleSchedule
 
 
@@ -36,7 +37,7 @@ def test_rule_can_end_or_be_cancelled_without_mutating_history() -> None:
     schedule.add_rule("allocation-v1", 1, original, effective_cycle=1, end_cycle=3)
 
     assert schedule.rule_for_cycle(3).rule_id == "allocation-v1"
-    with pytest.raises(KeyError):
+    with pytest.raises(MissingRecordError):
         schedule.rule_for_cycle(4)
     assert schedule.rule_for_cycle(1).rule is original
 
@@ -45,7 +46,7 @@ def test_rule_can_end_or_be_cancelled_without_mutating_history() -> None:
     cancellable.cancel("allocation-v1", from_cycle=3)
 
     assert cancellable.rule_for_cycle(2).rule_id == "allocation-v1"
-    with pytest.raises(KeyError):
+    with pytest.raises(MissingRecordError):
         cancellable.rule_for_cycle(3)
 
 
@@ -66,7 +67,7 @@ def test_schedule_rejects_duplicate_versions_and_invalid_effective_cycles() -> N
         )
     with pytest.raises(ValueError, match="positive"):
         schedule.rule_for_cycle(0)
-    with pytest.raises(KeyError, match="not found"):
+    with pytest.raises(MissingRecordError, match="not found"):
         schedule.cancel("missing", 2)
     with pytest.raises(ValueError, match="positive"):
         schedule.cancel("allocation-v1", 0)

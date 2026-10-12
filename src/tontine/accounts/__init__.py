@@ -8,7 +8,11 @@ from datetime import date
 from enum import StrEnum
 
 from tontine.countries import CountryCode
-from tontine.exceptions import DuplicateAccountError, UnsafeAccountReferenceError
+from tontine.exceptions import (
+    DuplicateAccountError,
+    MissingRecordError,
+    UnsafeAccountReferenceError,
+)
 from tontine.groups import CurrencyCode
 
 
@@ -159,12 +163,12 @@ class FinancialAccountRegistry:
             account_id: Stable financial-account identifier.
 
         Raises:
-            KeyError: If no account has the requested ID.
+            MissingRecordError: If no account has the requested ID.
         """
         try:
             return self._accounts[account_id]
         except KeyError as exc:
-            raise KeyError(f"Account {account_id!r} was not found.") from exc
+            raise MissingRecordError(f"Account {account_id!r} was not found.") from exc
 
     def record_event(
         self,
@@ -214,12 +218,16 @@ class FinancialAccountRegistry:
         self._ledger_accounts[account_id] = ledger_account_id
 
     def ledger_account_for(self, account_id: str) -> str:
-        """Return the logical ledger identifier linked to an account."""
+        """Return the logical ledger identifier linked to an account.
+
+        Raises:
+            MissingRecordError: If the account or its ledger link is missing.
+        """
         self.get(account_id)
         try:
             return self._ledger_accounts[account_id]
         except KeyError as exc:
-            raise KeyError(
+            raise MissingRecordError(
                 f"No logical ledger account is linked to {account_id!r}."
             ) from exc
 

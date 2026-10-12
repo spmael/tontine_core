@@ -6,15 +6,18 @@ small in-memory implementations for tests and examples.
 ## Semantics
 
 - `add()` rejects duplicate stable identifiers with `ValueError`.
-- `get()` raises `KeyError` for missing identifiers.
+- `get()` raises `MissingRecordError` (a `TontineError`) for missing identifiers.
 - `list()` returns deterministic stable-identifier order where applicable.
 - Domain records remain responsible for their own immutability and invariants.
 - Repository methods do not access networks, databases, payment providers, or
   financial institutions.
 
-Current protocols cover groups, accounts, contribution cycles, ledger posting,
-and investment activity. Future SQL, Django, SQLAlchemy, or other adapters must
-implement the same protocols outside the core domain package.
+`MissingRecordError` is not a `KeyError`; callers should catch this documented
+domain exception for expected missing-record failures. This is a breaking
+change for callers that previously caught `KeyError`. Current protocols cover
+groups, accounts, contribution cycles, ledger posting, and investment activity.
+Future SQL, Django, SQLAlchemy, or other adapters must implement the same
+protocols outside the core domain package.
 
 ## Naming Convention
 

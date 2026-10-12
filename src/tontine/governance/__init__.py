@@ -12,6 +12,7 @@ from typing import Any
 
 from tontine.audit import AuditEvent, AuditEventRegistry
 from tontine.classic import ClassicRotation
+from tontine.exceptions import MissingRecordError
 
 
 class ProposalStatus(StrEnum):
@@ -244,19 +245,27 @@ class GovernanceRegistry:
         self._audit("ruleset_added", ruleset.ruleset_id, datetime.now().astimezone())
 
     def ruleset_for_cycle(self, cycle_number: int) -> Ruleset:
-        """Return the latest ruleset effective for a cycle."""
+        """Return the latest ruleset effective for a cycle.
+
+        Raises:
+            MissingRecordError: If no ruleset applies to the cycle.
+        """
         applicable = [
             item for item in self._rulesets if item.effective_cycle <= cycle_number
         ]
         if not applicable:
-            raise KeyError(f"No ruleset is effective for cycle {cycle_number}.")
+            raise MissingRecordError(
+                f"No ruleset is effective for cycle {cycle_number}."
+            )
         return applicable[-1]
 
     def _proposal(self, proposal_id: str) -> RotationProposal:
         try:
             return self._proposals[proposal_id]
         except KeyError as exc:
-            raise KeyError(f"Proposal {proposal_id!r} was not found.") from exc
+            raise MissingRecordError(
+                f"Proposal {proposal_id!r} was not found."
+            ) from exc
 
     def _audit(self, event_type: str, aggregate_id: str, occurred_at: datetime) -> None:
         event_number = len(self._audit_registry.all_events()) + 1

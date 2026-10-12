@@ -4,7 +4,7 @@ from decimal import Decimal
 import pytest
 
 from tontine.contributions import ContributionCycle, ContributionStatus
-from tontine.exceptions import DuplicateContributionError
+from tontine.exceptions import DuplicateContributionError, MissingRecordError
 
 
 @pytest.fixture
@@ -144,5 +144,5 @@ def test_cycle_assesses_fixed_penalties_after_grace_period() -> None:
     assert adjusted.penalty == Decimal("0")
     assert cycle.penalties_total == Decimal("50")
 
-    with pytest.raises(KeyError, match="No contribution"):
+    with pytest.raises(MissingRecordError, match="No contribution"):
         cycle.penalty_for("unknown")

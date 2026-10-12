@@ -5,7 +5,7 @@ from datetime import date
 __version__ = "0.1.0"
 
 from .contributions import ContributionCycle
-from .exceptions import TontineError
+from .exceptions import MissingRecordError, TontineError
 from .groups import Group
 
 
@@ -41,6 +41,7 @@ def create_contribution_cycle(
 __all__ = [
 	"ContributionCycle",
 	"Group",
+	"MissingRecordError",
 	"TontineError",
 	"__version__",
 	"create_contribution_cycle",

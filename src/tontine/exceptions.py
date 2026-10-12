@@ -5,6 +5,10 @@ class TontineError(Exception):
     """Base exception for expected tontine domain errors."""
 
 
+class MissingRecordError(TontineError):
+    """Raised when an expected domain record or relationship is unavailable."""
+
+
 class InvalidCurrencyError(TontineError):
     """Raised when a currency value is not a supported ISO code."""
 

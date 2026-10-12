@@ -9,6 +9,7 @@ from tontine.accounts import FinancialAccount
 from tontine.audit import AuditEvent
 from tontine.classic import ClassicPayout, ClassicRotation
 from tontine.contributions import ContributionCycle
+from tontine.exceptions import MissingRecordError
 from tontine.governance import RotationProposal, Ruleset
 from tontine.groups import Group
 from tontine.members import Member
@@ -30,7 +31,7 @@ class GroupRepository(Protocol):
         """Add a group or raise for a duplicate identifier."""
 
     def get(self, group_id: str) -> Group:
-        """Return a group or raise KeyError when missing."""
+        """Return a group or raise MissingRecordError when missing."""
 
     def list(self) -> Sequence[Group]:
         """Return groups in deterministic identifier order."""
@@ -44,7 +45,7 @@ class AccountRepository(Protocol):
         """Add an account or raise for a duplicate identifier."""
 
     def get(self, account_id: str) -> FinancialAccount:
-        """Return an account or raise KeyError when missing."""
+        """Return an account or raise MissingRecordError when missing."""
 
     def list(self) -> Sequence[FinancialAccount]:
         """Return accounts in deterministic identifier order."""
@@ -63,11 +64,11 @@ class InMemoryGroupRepository:
         self._groups[group.group_id] = group
 
     def get(self, group_id: str) -> Group:
-        """Return a group or raise KeyError when missing."""
+        """Return a group or raise MissingRecordError when missing."""
         try:
             return self._groups[group_id]
         except KeyError as exc:
-            raise KeyError(f"Group {group_id!r} was not found.") from exc
+            raise MissingRecordError(f"Group {group_id!r} was not found.") from exc
 
     def list(self) -> tuple[Group, ...]:
         """Return groups sorted by stable identifier."""
@@ -87,11 +88,11 @@ class InMemoryAccountRepository:
         self._accounts[account.account_id] = account
 
     def get(self, account_id: str) -> FinancialAccount:
-        """Return an account or raise KeyError when missing."""
+        """Return an account or raise MissingRecordError when missing."""
         try:
             return self._accounts[account_id]
         except KeyError as exc:
-            raise KeyError(f"Account {account_id!r} was not found.") from exc
+            raise MissingRecordError(f"Account {account_id!r} was not found.") from exc
 
     def list(self) -> tuple[FinancialAccount, ...]:
         """Return accounts sorted by stable identifier."""
@@ -111,11 +112,11 @@ class InMemoryCycleRepository:
         self._cycles[cycle.cycle_id] = cycle
 
     def get(self, cycle_id: str) -> ContributionCycle:
-        """Return a cycle or raise KeyError when missing."""
+        """Return a cycle or raise MissingRecordError when missing."""
         try:
             return self._cycles[cycle_id]
         except KeyError as exc:
-            raise KeyError(f"Cycle {cycle_id!r} was not found.") from exc
+            raise MissingRecordError(f"Cycle {cycle_id!r} was not found.") from exc
 
     def list(self) -> tuple[ContributionCycle, ...]:
         """Return cycles sorted by stable identifier."""
@@ -135,11 +136,11 @@ class InMemoryMemberRepository:
         self._members[member.member_id] = member
 
     def get(self, member_id: str) -> Member:
-        """Return a member or raise KeyError when missing."""
+        """Return a member or raise MissingRecordError when missing."""
         try:
             return self._members[member_id]
         except KeyError as exc:
-            raise KeyError(f"Member {member_id!r} was not found.") from exc
+            raise MissingRecordError(f"Member {member_id!r} was not found.") from exc
 
     def list(self) -> tuple[Member, ...]:
         """Return members sorted by stable identifier."""
@@ -160,11 +161,13 @@ class InMemoryClassicRepository:
         self._rotations[rotation_id] = rotation
 
     def get_rotation(self, rotation_id: str) -> ClassicRotation:
-        """Return a rotation or raise KeyError when missing."""
+        """Return a rotation or raise MissingRecordError when missing."""
         try:
             return self._rotations[rotation_id]
         except KeyError as exc:
-            raise KeyError(f"Rotation {rotation_id!r} was not found.") from exc
+            raise MissingRecordError(
+                f"Rotation {rotation_id!r} was not found."
+            ) from exc
 
     def record_payout(self, payout: ClassicPayout) -> None:
         """Record a payout and reject duplicate cycle numbers."""
@@ -191,11 +194,13 @@ class InMemoryGovernanceRepository:
         self._proposals[proposal.proposal_id] = proposal
 
     def get_proposal(self, proposal_id: str) -> RotationProposal:
-        """Return a proposal or raise KeyError when missing."""
+        """Return a proposal or raise MissingRecordError when missing."""
         try:
             return self._proposals[proposal_id]
         except KeyError as exc:
-            raise KeyError(f"Proposal {proposal_id!r} was not found.") from exc
+            raise MissingRecordError(
+                f"Proposal {proposal_id!r} was not found."
+            ) from exc
 
     def save_ruleset(self, ruleset: Ruleset) -> None:
         """Save a ruleset and reject duplicate versions."""

@@ -22,7 +22,7 @@ class CycleRepository(Protocol):
         """Add a cycle or raise for a duplicate cycle identifier."""
 
     def get(self, cycle_id: str) -> ContributionCycle:
-        """Return a cycle or raise KeyError when missing."""
+        """Return a cycle or raise MissingRecordError when missing."""
 
     def list(self) -> Sequence[ContributionCycle]:
         """Return cycles in deterministic identifier order."""
@@ -59,7 +59,7 @@ class MemberRepository(Protocol):
         """Add a member or raise for a duplicate member identifier."""
 
     def get(self, member_id: str) -> Member:
-        """Return a member or raise KeyError when missing."""
+        """Return a member or raise MissingRecordError when missing."""
 
     def list(self) -> Sequence[Member]:
         """Return members in deterministic identifier order."""
@@ -73,7 +73,7 @@ class ClassicRepository(Protocol):
         """Save a rotation version or raise for a duplicate identifier."""
 
     def get_rotation(self, rotation_id: str) -> ClassicRotation:
-        """Return a rotation or raise KeyError when missing."""
+        """Return a rotation or raise MissingRecordError when missing."""
 
     def record_payout(self, payout: ClassicPayout) -> None:
         """Record a payout or raise for a duplicate cycle."""
@@ -90,7 +90,7 @@ class GovernanceRepository(Protocol):
         """Save a proposal or raise for a duplicate proposal identifier."""
 
     def get_proposal(self, proposal_id: str) -> RotationProposal:
-        """Return a proposal or raise KeyError when missing."""
+        """Return a proposal or raise MissingRecordError when missing."""
 
     def save_ruleset(self, ruleset: Ruleset) -> None:
         """Save a ruleset version or raise for a duplicate version."""
