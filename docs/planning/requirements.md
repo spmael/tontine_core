@@ -1,13 +1,16 @@
 ---
 kind: requirements_register
-source: BRD.md
+source: BRD.md; docs/TONTINE_CORE_GAPS_v1.md (proposed future requirements)
 status: active
 ---
 
 # tontine-core Requirements Register
 
 This register translates the BRD into stable, testable requirement IDs. The BRD
-remains authoritative; this file provides planning and traceability.
+remains authoritative for the current implementation baseline. The
+`Next-Version Gap Requirements` section records proposed future scope from
+`docs/TONTINE_CORE_GAPS_v1.md`; those additions do not change the current BRD
+baseline or imply that their design decisions have been made.
 
 ## Package Foundation
 
@@ -243,6 +246,176 @@ in-memory persistence and later SQL, Django, SQLAlchemy, or other adapters.
 The package must provide a typed, documented API for creating tontines, recording
 contributions, managing cycles, posting financial events, and generating reports.
 
+## Next-Version Gap Requirements
+
+The following requirements formalize verified integration gaps and design-time
+needs reported in `docs/TONTINE_CORE_GAPS_v1.md`. They are proposed backlog scope:
+implementation tasks and unresolved product/domain decisions are intentionally
+deferred.
+
+### Stateful Domain and Ledger Queries
+
+#### FR-API-004 - Define a state interchange contract
+
+Stateful domain registries must provide a documented, deterministic persistence
+and rehydration contract, using either a versioned state representation or a
+canonical event-replay contract. Rehydration must not depend on undocumented
+sequences of public mutations.
+
+#### FR-LDG-005 - Query point-in-time balances
+
+Ledger balance queries must support an optional timezone-aware `as_of` instant
+and derive the result only from journals recorded on or before that instant.
+
+#### FR-LDG-006 - Reuse derived ledger state for balance queries
+
+Ledger consumers must be able to query balances without replaying the complete
+journal history in application code for every request. Any index, checkpoint, or
+cached state must remain derivable from the immutable journal source of truth.
+
+### Governance and Rotation
+
+#### FR-GOV-005 - Support proposals for non-rotation decisions
+
+The governance capability must support a proposal and voting lifecycle that can
+represent decisions beyond rotation-order changes while keeping approval effects
+explicit and domain-specific.
+
+#### FR-GOV-006 - Return approval rules and evaluation tallies
+
+Proposal evaluation must expose an auditable tally of eligible, yes, no, abstain,
+and non-voting members, and support explicit approval rules for threshold,
+quorum, and participation. The existing threshold behavior must remain
+representable.
+
+#### FR-GOV-007 - Enforce proposal deadlines with explicit event times
+
+Voting and evaluation must use explicit timezone-aware event times and enforce
+the proposal's declared deadline and closing policy. A vote after the deadline
+must not be accepted.
+
+#### FR-GOV-008 - Preserve proposal eligibility context
+
+A proposal's electorate and eligibility context must remain stable and
+reproducible after membership changes, so unrelated later membership changes do
+not silently invalidate an in-flight proposal.
+
+#### FR-GOV-009 - Validate proposal effective cycles
+
+Governance must reject a proposal whose effective cycle is not eligible under
+the group's current-cycle context, and expose which cycle/date validation failed
+through a specific, actionable domain error.
+
+#### FR-GOV-010 - Propose a one-cycle rotation exception
+
+Governance must support proposing a scoped rotation change for a single cycle
+without requiring a replacement order for every active member. The base rotation
+must remain available outside the approved exception's scope.
+
+#### FR-GOV-011 - Preserve caller-supplied audit times
+
+Mutating governance operations must accept or otherwise use an explicit
+timezone-aware occurrence time so audit history records when an action happened,
+not when it was later replayed.
+
+#### FR-CLS-005 - Resolve versioned rotations independently
+
+The classic capability must resolve the applicable immutable rotation order for
+a cycle from effective-cycle rotation versions without requiring reconstruction
+of governance proposal and voting history.
+
+### Contributions and Public API Behavior
+
+#### FR-CON-007 - Apply the configured penalty destination
+
+Contribution penalty assessment must carry the destination configured by the
+applicable contribution rule rather than silently defaulting to a different
+destination.
+
+#### NFR-API-001 - Expose consistent actionable domain errors
+
+Public domain operations must distinguish missing records from invalid input
+with documented domain errors. Repository and journal lookups must not leak
+inconsistent bare built-in exceptions for expected domain failures.
+
+#### NFR-API-002 - Make timezone requirements explicit
+
+Public datetime inputs must retain timezone-awareness validation without
+silently assuming a timezone. Errors must identify the offending input and
+explain how to provide an aware datetime; mutating operations must allow the
+actual occurrence time to be supplied explicitly.
+
+### Investment Activity and Valuation
+
+#### FR-INV-006 - Represent valuation before unit issuance
+
+Investment valuation must represent the valid no-units-outstanding state
+explicitly without requiring callers to catch an exception for that state.
+
+#### FR-INV-007 - Read recorded investment activity
+
+The investment activity boundary must provide deterministic read access to
+recorded activity, including filtering by asset, activity type, and date range
+where those fields are available.
+
+#### FR-INV-008 - Validate investment activity against its asset
+
+Investment activity must validate its amount and currency against the associated
+asset and activity type. Cross-currency activity must be rejected or use an
+explicit, auditable conversion input; zero amounts must only be accepted where
+the activity type defines them as meaningful.
+
+#### FR-INV-009 - Link activity to its authorizing decision
+
+Investment purchases and sales must be able to retain a structured reference to
+the decision authorizing the activity, separate from free-text source
+provenance.
+
+### Membership and Participation
+
+#### FR-MEM-001 - Represent multiple participation shares per member
+
+The domain must allow one person to hold multiple distinct participation shares
+or slots where contribution and rotation rules operate per share, while
+person-level governance voting remains one vote per member.
+
+#### FR-MEM-002 - Separate member responsibilities from roles
+
+The domain must represent work responsibilities independently of membership
+roles and provide a check for conflicting assignments such as reviewing one's
+own treasurer activity. These responsibilities must not implement application
+authentication or authorization.
+
+### Hybrid Rotation and Investment Tontines
+
+#### FR-HYB-001 - Version contribution split rules
+
+Hybrid tontines must be able to define and resolve an effective-cycle rule that
+splits a recorded contribution between rotation and investment purposes.
+
+#### FR-HYB-002 - Derive unit issuance from a recorded contribution
+
+Hybrid investment-unit issuance must derive its amount and provenance from a
+recorded contribution and an applicable split rule and valuation, and must
+prevent duplicate issuance for the same contribution.
+
+#### FR-HYB-003 - Define late and missed contribution treatment
+
+Hybrid rules must explicitly define whether and how late or missed contributions
+affect investment allocation and unit issuance.
+
+#### FR-HYB-004 - Report a member's combined settlement position
+
+The domain must report a member's outstanding dues, unpaid rotation entitlement,
+and investment-unit position together and define how unit holdings are handled
+when membership or participation ends.
+
+#### FR-HYB-005 - Derive combined reporting from shared events
+
+Hybrid member reporting must derive rotation cash and investment value from
+shared contribution and investment-event provenance rather than unrelated
+caller-supplied totals.
+
 ## Non-functional Requirements
 
 ### NFR-CAL-001 - Use exact monetary arithmetic
@@ -275,6 +448,12 @@ The package must not include custody, payment initiation, broker execution,
 automated FX, lending, tax calculation, KYC/AML, market-data feeds, or regulatory
 reporting.
 
+### NFR-PERF-001 - Keep repeated ledger reads independent of full-history replay
+
+Repeated balance queries must not require consumers to replay all journals for
+each read. Any performance optimization must preserve journal-derived balances
+and deterministic historical results.
+
 ## Traceability Summary
 
 | BRD area | Requirement IDs | Initial capability |
@@ -290,3 +469,9 @@ reporting.
 | Statements and Reporting | FR-RPT-001..003 | CAP-REPORT-001 |
 | Persistence and Public API | FR-API-001..003 | CAP-API-001 |
 | Non-functional | NFR-CAL-001..NFR-SCP-001 | Cross-cutting |
+| Next-version state and ledger queries | FR-API-004, FR-LDG-005..006, NFR-PERF-001 | CAP-STATE-001, CAP-LEDGER-002 |
+| Next-version governance and rotation | FR-GOV-005..011, FR-CLS-005 | CAP-GOV-002, CAP-CLASSIC-002 |
+| Next-version contributions and API errors | FR-CON-007, NFR-API-001..002 | CAP-CON-002, CAP-API-002 |
+| Next-version investment activity | FR-INV-006..009 | CAP-INV-002 |
+| Next-version membership participation | FR-MEM-001..002 | CAP-MEM-001 |
+| Next-version hybrid operation | FR-HYB-001..005 | CAP-HYB-001 |
