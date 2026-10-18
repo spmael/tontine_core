@@ -9,12 +9,12 @@ _Generated from capability and task frontmatter._
 
 ## Summary
 
-- backlog: 6
+- backlog: 5
 - blocked: 0
 - in_progress: 0
 - partial: 0
 - ready: 0
-- shipped: 57
+- shipped: 59
 
 ## Items
 
@@ -26,7 +26,7 @@ _Generated from capability and task frontmatter._
 | capability | CAP-CLASSIC-001 | shipped | 2026-09-12 | 2026-10-18 | domain |
 | capability | CAP-CLASSIC-002 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | capability | CAP-CON-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
-| capability | CAP-CON-002 | backlog | null | null | domain |
+| capability | CAP-CON-002 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | capability | CAP-GOV-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-GOV-002 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | capability | CAP-GROUP-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
@@ -58,6 +58,7 @@ _Generated from capability and task frontmatter._
 | task | TASK-CON-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-CON-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-CON-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
+| task | TASK-CON-004 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | task | TASK-GOV-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-GOV-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-GOV-003 | shipped | 2026-10-18 | 2026-10-18 | domain |

@@ -71,7 +71,8 @@ The package uses a `src/` layout and supports Python 3.12 or newer.
 The public top-level helpers are:
 
 - `tontine.create_group(...)` for creating a draft group;
-- `tontine.create_contribution_cycle(...)` for creating a contribution cycle;
+- `tontine.create_contribution_cycle(...)` for creating a contribution cycle,
+  optionally applying an effective contribution rule's penalty settings;
 - `tontine.__version__` for the package version.
 
 Capability-specific public classes are exposed from their respective modules:
@@ -112,7 +113,8 @@ Invalid state transitions are rejected with domain errors.
 
 Contribution rules support daily, weekly, and monthly frequencies. Rules validate
 currency, amount, due-date convention, grace period, due day, optional late
-penalty, effective date, and IANA timezone.
+penalty and its destination, effective date, and IANA timezone. The penalty
+destination defaults to `COMMON_RESERVE`.
 
 Contribution cycles validate their identifier and timezone and maintain expected
 and recorded contributions. Contribution status is derived from expected amount,
@@ -121,12 +123,15 @@ not currently attach a payout or allocation record. A configured fixed penalty i
 assessed after the due date plus the configured grace period for late or missed
 contributions.
 
-Duplicate contribution records are rejected unless an explicit adjustment is
-requested. Penalties are separate from contribution amounts and do not increase
+Cycles created with an effective rule carry its penalty amount, currency, grace
+period, and destination into assessments. Duplicate contribution records are
+rejected unless an explicit adjustment is requested. Penalties are separate
+from contribution amounts and do not increase
 contribution totals or investment units. Each assessment records its member,
 cycle, reason, amount, timezone-aware assessment time, unpaid status, and
-destination. `COMMON_RESERVE` is the default destination. Payment processing,
-penalty settlement, waivers, and ledger posting for penalties are outside the
+destination. `COMMON_RESERVE` remains the default when a cycle is created
+without a rule. Payment processing, penalty settlement, waivers, and ledger
+posting for penalties are outside the
 current package behavior.
 
 ### 5.3 Classic rotation and payouts

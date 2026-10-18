@@ -103,7 +103,8 @@ class ContributionRule:
     """Define a recurring Decimal amount and local due-date convention.
 
     The timezone is an IANA name used to interpret cycle dates. Supported
-    frequencies are daily, weekly, and monthly.
+    frequencies are daily, weekly, and monthly. Penalty destinations default
+    to the common reserve.
     """
 
     amount: Decimal
@@ -115,11 +116,17 @@ class ContributionRule:
     timezone: str
     due_day: int | None = None
     late_penalty: Decimal | None = None
+    penalty_destination: PenaltyDestination = PenaltyDestination.COMMON_RESERVE
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "amount", _decimal_amount(self.amount))
         object.__setattr__(self, "currency", CurrencyCode(str(self.currency)))
         object.__setattr__(self, "frequency", ContributionFrequency(self.frequency))
+        object.__setattr__(
+            self,
+            "penalty_destination",
+            PenaltyDestination(self.penalty_destination),
+        )
         _zone_info(self.timezone)
         object.__setattr__(
             self,
@@ -228,12 +235,14 @@ class ContributionCycle:
     grace_period_days: int = 0
     late_penalty: Decimal = Decimal("0")
     penalty_currency: CurrencyCode | None = None
+    penalty_destination: PenaltyDestination = PenaltyDestination.COMMON_RESERVE
 
     def __post_init__(self) -> None:
         if not self.cycle_id.strip():
             raise ValueError("Cycle identifier is required.")
         _zone_info(self.timezone)
         self.status = CycleStatus(self.status)
+        self.penalty_destination = PenaltyDestination(self.penalty_destination)
         if self.grace_period_days < 0:
             raise ValueError("Grace period cannot be negative.")
         self.late_penalty = _decimal_amount(self.late_penalty, "Late penalty")
@@ -243,6 +252,42 @@ class ContributionCycle:
             raise ValueError(
                 "Penalty currency is required when a late penalty is configured."
             )
+
+    @classmethod
+    def from_rule(
+        cls,
+        cycle_id: str,
+        start_date: date,
+        due_date: date,
+        rule: ContributionRule,
+    ) -> ContributionCycle:
+        """Create a cycle using the applicable contribution rule's settings.
+
+        Args:
+            cycle_id: Unique identifier for the contribution period.
+            start_date: First date covered by the cycle.
+            due_date: Date on which contributions are due.
+            rule: Rule effective on the cycle start date.
+
+        Raises:
+            ValueError: If the rule is not effective by the cycle start date.
+        """
+        if rule.effective_date > start_date:
+            raise ValueError(
+                "Contribution rule is not effective for the cycle start date."
+            )
+        return cls(
+            cycle_id=cycle_id,
+            start_date=start_date,
+            due_date=due_date,
+            timezone=rule.timezone,
+            grace_period_days=rule.grace_period_days,
+            late_penalty=(
+                Decimal("0") if rule.late_penalty is None else rule.late_penalty
+            ),
+            penalty_currency=rule.currency,
+            penalty_destination=rule.penalty_destination,
+        )
 
     def add_expected_contribution(
         self,
@@ -428,6 +473,7 @@ class ContributionCycle:
             amount=self.late_penalty,
             currency=self.penalty_currency,
             assessed_on=payment_date or as_of,
+            destination=self.penalty_destination,
         )
         return penalty.amount, penalty
 
