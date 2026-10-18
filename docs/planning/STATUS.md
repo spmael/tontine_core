@@ -9,12 +9,12 @@ _Generated from capability and task frontmatter._
 
 ## Summary
 
-- backlog: 5
+- backlog: 4
 - blocked: 0
 - in_progress: 0
 - partial: 0
 - ready: 0
-- shipped: 59
+- shipped: 65
 
 ## Items
 
@@ -32,7 +32,7 @@ _Generated from capability and task frontmatter._
 | capability | CAP-GROUP-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-HYB-001 | backlog | null | null | domain |
 | capability | CAP-INV-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
-| capability | CAP-INV-002 | backlog | null | null | domain |
+| capability | CAP-INV-002 | shipped | 2026-10-18 | 2026-10-19 | domain |
 | capability | CAP-LEDGER-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-LEDGER-002 | backlog | null | null | domain |
 | capability | CAP-LOCATION-001 | shipped | 2026-09-13 | 2026-09-13 | domain |
@@ -64,6 +64,7 @@ _Generated from capability and task frontmatter._
 | task | TASK-GOV-003 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | task | TASK-GOV-004 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | task | TASK-GOV-005 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-GOV-006 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | task | TASK-GROUP-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-GROUP-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-GROUP-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
@@ -73,6 +74,10 @@ _Generated from capability and task frontmatter._
 | task | TASK-INV-004 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-INV-005 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-INV-006 | shipped | 2026-09-12 | 2026-09-12 | domain |
+| task | TASK-INV-007 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-INV-008 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-INV-009 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-INV-010 | shipped | 2026-10-19 | 2026-10-19 | domain |
 | task | TASK-LEDGER-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-LEDGER-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-LEDGER-003 | shipped | 2026-09-12 | 2026-09-12 | domain |

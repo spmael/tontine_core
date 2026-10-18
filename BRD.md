@@ -197,6 +197,20 @@ valuations, and liabilities include manually supplied provenance. Supported
 activity categories are purchase, sale, income, and fee. Manual valuations and
 liabilities require non-negative values, effective dates, and sources.
 
+Activity in the asset currency is recorded directly. Activity in another
+currency requires a supplied FX rate for exactly that currency pair; the record
+keeps the original amount, the rate and its source, and the unrounded
+asset-currency amount. Recorded activity can be queried by asset, type, and
+inclusive effective-date bounds in effective-date, recorded-time, and event-ID
+order. Purchases and sales may reference an approved governance decision that
+authorizes that asset and activity type up to a cumulative maximum in the asset
+currency. Activity amounts are strictly positive, recorded gross of tax or
+rebates, and at least one smallest ISO 4217 unit of both the activity and asset
+currencies; smaller amounts are rejected rather than rounded (ADR-005).
+Purchases and sales also record a strictly positive asset quantity (`units`);
+income and fees carry none. Waivers,
+corrections, and unit-only corporate actions are not recorded as activity.
+
 Member unit balances are maintained by issue and redemption operations. Unit
 distributions are not currently modeled. The unit ledger calculates each
 member's ownership percentage from their balance divided by total outstanding
@@ -212,6 +226,9 @@ unit price = NAV / units outstanding
 member value = member units * unit price
 ownership percentage = member units / total units * 100
 ```
+
+Zero units outstanding is valid before the first issuance: NAV is still
+derived, while unit price, member value, and ownership percentage are `None`.
 
 Liability registries reject duplicate identifiers and aggregate recorded
 liabilities by currency. Asset and investment-activity aggregation remains the

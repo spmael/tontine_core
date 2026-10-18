@@ -113,9 +113,11 @@ open; the capability backlog must not be treated as choosing an answer:
 4. Proposal timing: which boundary supplies the current cycle and time, and how
    to handle an already-open or already-closed effective cycle.
 5. Investment valuation with zero units: a tagged empty result versus a dedicated
-   constructor/value, and which fields are meaningful in that state.
+   constructor/value, and which fields are meaningful in that state. Resolved by
+   ADR-005: optional per-unit values plus a `has_units_outstanding` flag.
 6. Cross-currency investment activity: reject mismatched currency, or accept an
-   explicit conversion record with a defined accounting point.
+   explicit conversion record with a defined accounting point. Resolved by
+   ADR-005: accepted only with an explicit `FxRate`; derived amount unrounded.
 7. Shares: whether share identity belongs to membership, a participation
    aggregate, or a separate domain entity, and how share changes affect existing
    rotations.

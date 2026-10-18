@@ -17,6 +17,7 @@ from tontine.classic import (
 )
 
 from .models import (
+    InvestmentAuthorizationEffect,
     ProposalEffect,
     ProposalEvaluation,
     ProposalStatus,
@@ -90,7 +91,12 @@ class GovernanceProposalSnapshot:
         object.__setattr__(self, "status", ProposalStatus(self.status))
         if not isinstance(
             self.effect,
-            (RotationOrderEffect, RotationExceptionEffect, RulesetActivationEffect),
+            (
+                RotationOrderEffect,
+                RotationExceptionEffect,
+                RulesetActivationEffect,
+                InvestmentAuthorizationEffect,
+            ),
         ):
             raise TypeError("Governance proposal snapshots require a typed effect.")
 

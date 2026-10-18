@@ -159,8 +159,11 @@ value = valuation.member_value(member_units)
 ```
 
 The valuation derives `NAV = assets - liabilities`, unit price, ownership
-percentage, and member value from explicit Decimal inputs. Asset and activity
-aggregation remains the responsibility of the consuming application.
+percentage, and member value from explicit Decimal inputs. Before the first
+unit issue, `units_outstanding` may be zero: NAV is still derived and
+`has_units_outstanding` is false, while unit price, ownership percentage, and
+member value are `None`. Asset and activity aggregation remains the
+responsibility of the consuming application.
 
 ### Structured reporting
 

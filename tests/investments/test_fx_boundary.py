@@ -60,3 +60,15 @@ def test_fx_rate_policy_rejects_stale_records() -> None:
             effective_at=datetime(2027, 1, 1, 12, 0),
             source="ECB_FIXTURE",
         )
+
+
+def test_fx_rate_converts_in_both_directions_without_rounding() -> None:
+    rate = FxRate("USD", "JPY", Decimal("150"), datetime(2027, 1, 31, tzinfo=UTC), "x")
+
+    assert rate.convert(Decimal("2"), "USD") == Decimal("300")
+    assert rate.convert(Decimal("1"), "JPY") == Decimal("1") / Decimal("150")
+    assert rate.counter_currency("JPY") == "USD"
+    with pytest.raises(ValueError, match="does not cover"):
+        rate.convert(Decimal("1"), "EUR")
+    with pytest.raises(ValueError, match="does not cover"):
+        rate.counter_currency("EUR")

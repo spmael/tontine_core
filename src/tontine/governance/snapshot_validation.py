@@ -6,6 +6,7 @@ from tontine.audit import AuditEvent
 from tontine.classic import ClassicRotationSchedule
 
 from .models import (
+    InvestmentAuthorizationEffect,
     ProposalStatus,
     RotationExceptionEffect,
     RotationOrderEffect,
@@ -136,6 +137,15 @@ def validate_effect_provenance(
                 for event in governance_events
             ):
                 raise ValueError("Approved ruleset proposal effect is not applied.")
+        elif isinstance(effect, InvestmentAuthorizationEffect):
+            if not any(
+                event.event_type == "investment_authorization_approved"
+                and event.aggregate_id == proposal.proposal_id
+                for event in governance_events
+            ):
+                raise ValueError(
+                    "Approved investment authorization has no approval event."
+                )
         else:
             raise ValueError("Snapshot proposal has an unsupported typed effect.")
 

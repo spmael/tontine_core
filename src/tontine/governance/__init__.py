@@ -3,6 +3,7 @@
 from tontine.audit import AuditEvent
 
 from .models import (
+    InvestmentAuthorizationEffect,
     ProposalEffect,
     ProposalEvaluation,
     ProposalStatus,
@@ -22,6 +23,7 @@ __all__ = [
     "GovernanceRegistry",
     "GovernanceProposalSnapshot",
     "GovernanceSnapshot",
+    "InvestmentAuthorizationEffect",
     "ProposalEvaluation",
     "ProposalEffect",
     "ProposalStatus",

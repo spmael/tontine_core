@@ -96,14 +96,18 @@ class InvestmentSummary:
         units: Decimal | int | str,
         currency: str,
     ) -> InvestmentSummary:
-        """Build ownership and value fields from an investment valuation."""
+        """Build ownership and value fields from an investment valuation.
+
+        Before any units are issued, the member necessarily holds zero units,
+        so ownership and attributable value are reported as zero.
+        """
         normalized_units = _amount(units, "Investment units")
+        ownership = valuation.member_ownership_percentage(normalized_units)
+        value = valuation.member_value(normalized_units)
         return cls(
             units=normalized_units,
-            ownership_percentage=valuation.member_ownership_percentage(
-                normalized_units
-            ),
-            attributable_value=valuation.member_value(normalized_units),
+            ownership_percentage=Decimal("0") if ownership is None else ownership,
+            attributable_value=Decimal("0") if value is None else value,
             currency=CurrencyCode(currency),
         )
 

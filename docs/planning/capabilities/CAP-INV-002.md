@@ -1,9 +1,10 @@
 ---
 id: CAP-INV-002
-status: backlog
-started: null
-completed: null
-adr_refs: []
+status: shipped
+started: 2026-10-18
+completed: 2026-10-19
+adr_refs:
+  - ADR-005
 depends_on:
   - CAP-INV-001
   - CAP-GOV-002
@@ -37,25 +38,36 @@ structured authorization reference for purchases and sales.
 
 ## Acceptance Criteria
 
-- [ ] Represent the valid zero-units-outstanding valuation state explicitly.
-- [ ] Query recorded activities by asset, type, and available date bounds.
-- [ ] Validate amount and currency against both asset and activity type.
-- [ ] Require explicit provenance-bearing conversion inputs for any permitted
+- [x] Represent the valid zero-units-outstanding valuation state explicitly.
+- [x] Query recorded activities by asset, type, and available date bounds.
+- [x] Validate amount and currency against both asset and activity type.
+- [x] Require explicit provenance-bearing conversion inputs for any permitted
   cross-currency activity.
-- [ ] Retain a structured reference to the decision authorizing purchases and
+- [x] Retain a structured reference to the decision authorizing purchases and
   sales.
-- [ ] Keep activity aggregation and valuation behavior deterministic.
+- [x] Keep activity aggregation and valuation behavior deterministic.
 
 ## Implementation Tasks
 
-Task decomposition is intentionally deferred until the zero-unit valuation and
-cross-currency policies are reviewed in
-[`../../architecture/next-version-gap-architecture.md`](../../architecture/next-version-gap-architecture.md).
+Policies are decided in
+[ADR-005](../../architecture/adr/ADR-005-investment-activity-and-valuation-policy.md).
+
+- [TASK-INV-007](../tasks/TASK-INV-007.md) - shipped: no-units valuation and
+  module split
+- [TASK-INV-008](../tasks/TASK-INV-008.md) - shipped: currency validation, FX
+  conversion, and queries
+- [TASK-GOV-006](../tasks/TASK-GOV-006.md) - shipped: typed investment
+  authorization effect
+- [TASK-INV-009](../tasks/TASK-INV-009.md) - shipped: decision references with
+  cumulative limits
+- [TASK-INV-010](../tasks/TASK-INV-010.md) - shipped: positive and
+  minimum-unit activity amounts, and positive purchase and sale units
 
 ## Verification
 
 - Unit tests: zero-units state, activity filtering, amount/type validation,
-  currency mismatch, explicit conversion provenance, and authorization links.
+  purchase and sale units, currency mismatch, explicit conversion provenance,
+  and authorization links.
 - Integration tests: approved-decision reference validation through the public
   investment API.
 - Manual review: no implicit FX conversion or investment execution.

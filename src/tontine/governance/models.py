@@ -12,6 +12,8 @@ from typing import Any
 
 from tontine._datetime import require_aware_datetime
 from tontine.classic import ClassicRotation
+from tontine.currencies import CurrencyCode
+from tontine.investments.activity import InvestmentActivityType
 
 
 class ProposalStatus(StrEnum):
@@ -101,7 +103,44 @@ class RulesetActivationEffect:
     ruleset: Ruleset
 
 
-ProposalEffect = RotationOrderEffect | RotationExceptionEffect | RulesetActivationEffect
+@dataclass(frozen=True)
+class InvestmentAuthorizationEffect:
+    """Approved purchase or sale of one asset up to a cumulative maximum.
+
+    ``max_amount`` is in ``currency`` units, which must be the asset currency.
+    Activities citing the decision may not exceed it in total (ADR-005).
+    """
+
+    asset_id: str
+    activity_type: InvestmentActivityType
+    max_amount: Decimal
+    currency: CurrencyCode
+
+    def __post_init__(self) -> None:
+        if not self.asset_id.strip():
+            raise ValueError("Investment authorization asset is required.")
+        activity_type = InvestmentActivityType(self.activity_type)
+        if activity_type not in {
+            InvestmentActivityType.PURCHASE,
+            InvestmentActivityType.SALE,
+        }:
+            raise ValueError("Investment authorization covers purchases or sales.")
+        if (
+            not isinstance(self.max_amount, Decimal)
+            or not self.max_amount.is_finite()
+            or self.max_amount <= 0
+        ):
+            raise ValueError("Investment authorization maximum must be positive.")
+        object.__setattr__(self, "activity_type", activity_type)
+        object.__setattr__(self, "currency", CurrencyCode(str(self.currency)))
+
+
+ProposalEffect = (
+    RotationOrderEffect
+    | RotationExceptionEffect
+    | RulesetActivationEffect
+    | InvestmentAuthorizationEffect
+)
 
 
 @dataclass(frozen=True)
@@ -226,6 +265,11 @@ class RotationProposal:
                 or self.rotation_order
             ):
                 raise ValueError("Ruleset effect does not match its context.")
+        elif isinstance(effect, InvestmentAuthorizationEffect):
+            if self.rotation_order:
+                raise ValueError(
+                    "Investment authorization effect does not match its context."
+                )
         else:
             raise TypeError(
                 "Proposal effect must be a supported typed decision effect."
@@ -255,6 +299,7 @@ __all__ = [
     "ProposalEffect",
     "ProposalStatus",
     "ProposalTally",
+    "InvestmentAuthorizationEffect",
     "RotationExceptionEffect",
     "RotationOrderEffect",
     "RotationProposal",

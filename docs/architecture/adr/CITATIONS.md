@@ -2,7 +2,7 @@
 
 _Reverse index of package capability and task citations. Regenerate with `uv run python .agents/skills/pdlc/scripts/adr_index.py`; do not hand-edit._
 
-**4 of 4 ADRs are cited by planning records.**
+**5 of 5 ADRs are cited by planning records.**
 
 ## ADR-001-ledger-precision-and-rounding
 
@@ -22,4 +22,8 @@ _Reverse index of package capability and task citations. Regenerate with `uv run
 - [TASK-GOV-003](../../planning/tasks/TASK-GOV-003.md)
 - [TASK-GOV-004](../../planning/tasks/TASK-GOV-004.md)
 - [TASK-GOV-005](../../planning/tasks/TASK-GOV-005.md)
+
+## ADR-005-investment-activity-and-valuation-policy
+
+- [CAP-INV-002](../../planning/capabilities/CAP-INV-002.md)
 

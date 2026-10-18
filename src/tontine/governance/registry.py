@@ -17,8 +17,11 @@ from tontine.classic import (
 )
 from tontine.exceptions import MissingRecordError
 
+from ._investment_authorization import _InvestmentAuthorizations
 from ._lifecycle import _ProposalLifecycle
 from .models import (
+    InvestmentAuthorizationEffect,
+    ProposalEffect,
     ProposalStatus,
     RotationExceptionEffect,
     RotationOrderEffect,
@@ -29,7 +32,7 @@ from .models import (
 from .snapshots import GovernanceProposalSnapshot, GovernanceSnapshot
 
 
-class GovernanceRegistry(_ProposalLifecycle):
+class GovernanceRegistry(_ProposalLifecycle, _InvestmentAuthorizations):
     """Manage governance proposals, votes, effective rotations, and audit events."""
 
     def __init__(
@@ -282,7 +285,7 @@ class GovernanceRegistry(_ProposalLifecycle):
         description: str,
         proposer_id: str,
         rotation_order: tuple[str, ...],
-        effect: RotationOrderEffect | RotationExceptionEffect | RulesetActivationEffect,
+        effect: ProposalEffect,
         approval_threshold: Decimal,
         effective_cycle: int,
         current_cycle: int,
@@ -498,6 +501,18 @@ class GovernanceRegistry(_ProposalLifecycle):
             )
             self._rulesets.append(effect.ruleset)
             self._rulesets.sort(key=lambda item: (item.effective_cycle, item.version))
+        elif isinstance(effect, InvestmentAuthorizationEffect):
+            self._audit(
+                "investment_authorization_approved",
+                proposal.proposal_id,
+                occurred_at,
+                details={
+                    "asset_id": effect.asset_id,
+                    "activity_type": effect.activity_type.value,
+                    "max_amount": str(effect.max_amount),
+                    "currency": str(effect.currency),
+                },
+            )
         else:
             raise TypeError(
                 "Proposal effect must be a supported typed decision effect."
