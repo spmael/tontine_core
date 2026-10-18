@@ -1,8 +1,25 @@
 """Domain exceptions raised by tontine-core."""
 
+__all__ = [
+    "DuplicateAccountError",
+    "DuplicateAuditEventError",
+    "DuplicateContributionError",
+    "DuplicateGroupError",
+    "DuplicateInvestmentEventError",
+    "DuplicateJournalError",
+    "DuplicateMemberError",
+    "DuplicatePayoutError",
+    "InvalidCountryError",
+    "InvalidCurrencyError",
+    "InvalidMembershipTransitionError",
+    "MissingRecordError",
+    "TontineError",
+    "UnsafeAccountReferenceError",
+]
+
 
 class TontineError(Exception):
-    """Base exception for expected tontine domain errors."""
+    """Base class for framework-independent tontine domain exceptions."""
 
 
 class MissingRecordError(TontineError):

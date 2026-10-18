@@ -1,8 +1,8 @@
 ---
 id: CAP-API-002
-status: partial
+status: shipped
 started: 2026-10-12
-completed: null
+completed: 2026-10-18
 adr_refs: []
 depends_on:
   - CAP-API-001
@@ -32,22 +32,24 @@ record conditions and clear guidance for required timezone-aware datetime values
 
 ## Acceptance Criteria
 
-- [ ] Use documented domain errors consistently for expected missing-record and
+- [x] Use documented domain errors consistently for expected missing-record and
   invalid-input failures.
 - [x] Identify the failing field or parameter in datetime validation errors.
 - [x] Explain how a caller supplies an aware datetime.
 - [x] Keep occurrence times explicit for auditable mutations.
-- [ ] Preserve framework independence of public error types.
+- [x] Preserve framework independence of public error types.
 
 ## Implementation Tasks
 
 - [x] [TASK-API-003](../tasks/TASK-API-003.md): Standardize missing-record domain errors.
 - [x] [TASK-API-004](../tasks/TASK-API-004.md): Make timezone validation errors actionable.
 - [x] [TASK-API-005](../tasks/TASK-API-005.md): Accept explicit audit occurrence times.
+- [x] [TASK-API-006](../tasks/TASK-API-006.md): Verify and document the public error contract.
 
 ## Verification
 
-- Unit tests: missing journal/record errors, invalid input errors, and naive
-  versus timezone-aware datetime inputs.
+- Unit tests: missing-record lookups, invalid and duplicate inputs, exception
+  inheritance, and naive versus timezone-aware datetime inputs.
 - Integration tests: public API error behavior without framework adapters.
-- Manual review: exception compatibility and error-message actionability.
+- Manual review: exception compatibility, error-message actionability, and
+  framework-free runtime dependencies.

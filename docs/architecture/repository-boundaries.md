@@ -3,6 +3,20 @@
 `tontine-core` defines repository protocols at the domain boundary and supplies
 small in-memory implementations for tests and examples.
 
+## Public Error Contract
+
+- Missing expected records raise `MissingRecordError`, a `TontineError` that is
+  not a `KeyError`.
+- Invalid values or state raise `ValueError`; values of the wrong Python type
+  raise `TypeError`.
+- More specific domain failures use the corresponding `TontineError` subclass
+  where one is defined. Duplicate additions through repository `add()` methods
+  raise `ValueError`.
+- The core error hierarchy depends only on Python's built-in exception types.
+  Framework and persistence adapters must translate their own boundary errors
+  into this contract rather than introducing adapter-specific errors into the
+  domain package.
+
 ## Semantics
 
 - `add()` rejects duplicate stable identifiers with `ValueError`.
