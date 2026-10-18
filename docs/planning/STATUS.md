@@ -1,6 +1,6 @@
 ---
 kind: status_dashboard
-period: 2026-10-12
+period: 2026-10-18
 ---
 
 # Package Delivery Status
@@ -13,8 +13,8 @@ _Generated from capability and task frontmatter._
 - blocked: 0
 - in_progress: 0
 - partial: 1
-- ready: 2
-- shipped: 45
+- ready: 0
+- shipped: 47
 
 ## Items
 
@@ -46,8 +46,8 @@ _Generated from capability and task frontmatter._
 | task | TASK-API-001 | shipped | 2026-09-12 | 2026-09-12 | package-boundary |
 | task | TASK-API-002 | shipped | 2026-09-12 | 2026-09-12 | package-boundary |
 | task | TASK-API-003 | shipped | 2026-10-12 | 2026-10-12 | package-boundary |
-| task | TASK-API-004 | ready | null | null | package-boundary |
-| task | TASK-API-005 | ready | null | null | package-boundary |
+| task | TASK-API-004 | shipped | 2026-10-12 | 2026-10-12 | package-boundary |
+| task | TASK-API-005 | shipped | 2026-10-18 | 2026-10-18 | package-boundary |
 | task | TASK-CLASSIC-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-CLASSIC-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-CLASSIC-003 | shipped | 2026-09-12 | 2026-09-12 | domain |

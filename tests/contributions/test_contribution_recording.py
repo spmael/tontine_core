@@ -1,9 +1,15 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
 
-from tontine.contributions import ContributionCycle, ContributionStatus
+from tontine.contributions import (
+    Contribution,
+    ContributionCycle,
+    ContributionStatus,
+    Penalty,
+    PenaltyReason,
+)
 from tontine.exceptions import DuplicateContributionError, MissingRecordError
 
 
@@ -146,3 +152,81 @@ def test_cycle_assesses_fixed_penalties_after_grace_period() -> None:
 
     with pytest.raises(MissingRecordError, match="No contribution"):
         cycle.penalty_for("unknown")
+
+
+@pytest.mark.parametrize("field", ["payment_date", "as_of"])
+def test_contribution_timestamps_name_invalid_field_and_timezone_fix(
+    open_cycle: ContributionCycle,
+    field: str,
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            rf"{field} must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
+        open_cycle.record_contribution(
+            "member-1",
+            Decimal("30000"),
+            **{field: datetime(2027, 1, 15)},
+        )
+
+
+def test_penalty_timestamp_names_field_and_timezone_fix() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"assessed_on must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
+        Penalty(
+            member_id="member-1",
+            cycle_id="cycle-1",
+            reason=PenaltyReason.LATE_CONTRIBUTION,
+            amount=Decimal("50"),
+            currency="JPY",
+            assessed_on=datetime(2027, 1, 15),
+        )
+
+    assert (
+        Penalty(
+            member_id="member-1",
+            cycle_id="cycle-1",
+            reason=PenaltyReason.LATE_CONTRIBUTION,
+            amount=Decimal("50"),
+            currency="JPY",
+            assessed_on=datetime(2027, 1, 15, tzinfo=UTC),
+        ).assessed_on.tzinfo
+        is UTC
+    )
+
+
+def test_contribution_record_rejects_naive_payment_date() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"payment_date must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
+        Contribution(
+            member_id="member-1",
+            cycle_id="cycle-1",
+            expected_amount=Decimal("30000"),
+            actual_amount=Decimal("30000"),
+            payment_date=datetime(2027, 1, 15),
+            status=ContributionStatus.PAID,
+        )
+
+    contribution = Contribution(
+        member_id="member-1",
+        cycle_id="cycle-1",
+        expected_amount=Decimal("30000"),
+        actual_amount=Decimal("30000"),
+        payment_date=datetime(2027, 1, 15, tzinfo=UTC),
+        status=ContributionStatus.PAID,
+    )
+    assert contribution.payment_date is not None
+    assert contribution.payment_date.tzinfo is UTC

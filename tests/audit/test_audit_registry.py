@@ -69,7 +69,13 @@ def test_audit_registry_rejects_duplicate_ids_and_naive_timestamps() -> None:
     with pytest.raises(DuplicateAuditEventError):
         registry.record(**event_args)
 
-    with pytest.raises(ValueError, match="timezone-aware"):
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"occurred_at must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
         registry.record(
             **{
                 **event_args,

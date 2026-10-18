@@ -34,16 +34,16 @@ record conditions and clear guidance for required timezone-aware datetime values
 
 - [ ] Use documented domain errors consistently for expected missing-record and
   invalid-input failures.
-- [ ] Identify the failing field or parameter in datetime validation errors.
-- [ ] Explain how a caller supplies an aware datetime.
-- [ ] Keep occurrence times explicit for auditable mutations.
+- [x] Identify the failing field or parameter in datetime validation errors.
+- [x] Explain how a caller supplies an aware datetime.
+- [x] Keep occurrence times explicit for auditable mutations.
 - [ ] Preserve framework independence of public error types.
 
 ## Implementation Tasks
 
 - [x] [TASK-API-003](../tasks/TASK-API-003.md): Standardize missing-record domain errors.
-- [ ] [TASK-API-004](../tasks/TASK-API-004.md): Make timezone validation errors actionable.
-- [ ] [TASK-API-005](../tasks/TASK-API-005.md): Accept explicit audit occurrence times.
+- [x] [TASK-API-004](../tasks/TASK-API-004.md): Make timezone validation errors actionable.
+- [x] [TASK-API-005](../tasks/TASK-API-005.md): Accept explicit audit occurrence times.
 
 ## Verification
 

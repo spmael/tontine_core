@@ -8,6 +8,7 @@ from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from tontine._datetime import require_aware_datetime
 from tontine.exceptions import DuplicateContributionError, MissingRecordError
 from tontine.groups import CurrencyCode
 
@@ -92,9 +93,8 @@ def _zone_info(value: str) -> ZoneInfo:
         raise ValueError(f"Unknown IANA timezone: {value!r}.") from exc
 
 
-def _local_date(value: datetime, timezone: str) -> date:
-    if value.tzinfo is None or value.utcoffset() is None:
-        raise ValueError("Contribution timestamps must be timezone-aware.")
+def _local_date(value: datetime, timezone: str, field_name: str) -> date:
+    require_aware_datetime(value, field_name)
     return value.astimezone(_zone_info(timezone)).date()
 
 
@@ -164,7 +164,11 @@ class ContributionRule:
 
 @dataclass(frozen=True)
 class Penalty:
-    """Immutable penalty assessment kept separate from a contribution amount."""
+    """Immutable penalty assessment kept separate from a contribution amount.
+
+    ``assessed_on`` must be timezone-aware; construct it with
+    ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
+    """
 
     member_id: str
     cycle_id: str
@@ -183,13 +187,16 @@ class Penalty:
         object.__setattr__(self, "destination", PenaltyDestination(self.destination))
         object.__setattr__(self, "amount", _decimal_amount(self.amount, "Penalty"))
         object.__setattr__(self, "currency", CurrencyCode(str(self.currency)))
-        if self.assessed_on.tzinfo is None or self.assessed_on.utcoffset() is None:
-            raise ValueError("Penalty timestamps must be timezone-aware.")
+        require_aware_datetime(self.assessed_on, "assessed_on")
 
 
 @dataclass(frozen=True)
 class Contribution:
-    """Record one member contribution without initiating payment."""
+    """Record one member contribution without initiating payment.
+
+    If provided, ``payment_date`` must be timezone-aware; construct it with
+    ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
+    """
 
     member_id: str
     cycle_id: str
@@ -201,6 +208,10 @@ class Contribution:
     notes: str | None = None
     penalty: Decimal = Decimal("0")
     penalty_record: Penalty | None = None
+
+    def __post_init__(self) -> None:
+        if self.payment_date is not None:
+            require_aware_datetime(self.payment_date, "payment_date")
 
 
 @dataclass
@@ -310,8 +321,10 @@ class ContributionCycle:
         Args:
             member_id: Member whose expected contribution is being recorded.
             actual_amount: Received amount in the cycle currency units, or None.
-            payment_date: Timezone-aware payment timestamp.
-            as_of: Timezone-aware timestamp used for pending or missed status.
+            payment_date: Aware payment timestamp, constructed with
+                ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
+            as_of: Aware status reference timestamp, constructed with
+                ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
             adjustment: Replace an existing record when explicitly enabled.
 
         Returns:
@@ -328,6 +341,10 @@ class ContributionCycle:
                 f"Contribution for {member_id!r} already exists in "
                 f"cycle {self.cycle_id!r}."
             )
+        if payment_date is not None:
+            require_aware_datetime(payment_date, "payment_date")
+        if as_of is not None:
+            require_aware_datetime(as_of, "as_of")
         expected = self.expected_contributions[member_id]
         actual = (
             None
@@ -363,9 +380,11 @@ class ContributionCycle:
     ) -> ContributionStatus:
         late_date = self.due_date + timedelta(days=self.grace_period_days)
         payment_local_date = (
-            None if payment_date is None else _local_date(payment_date, self.timezone)
+            None
+            if payment_date is None
+            else _local_date(payment_date, self.timezone, "payment_date")
         )
-        as_of_local_date = _local_date(as_of, self.timezone)
+        as_of_local_date = _local_date(as_of, self.timezone, "as_of")
         if actual is None:
             return (
                 ContributionStatus.MISSED
@@ -387,11 +406,13 @@ class ContributionCycle:
     ) -> tuple[Decimal, Penalty | None]:
         threshold = self.due_date + timedelta(days=self.grace_period_days)
         payment_local_date = (
-            None if payment_date is None else _local_date(payment_date, self.timezone)
+            None
+            if payment_date is None
+            else _local_date(payment_date, self.timezone, "payment_date")
         )
-        late = (
-            payment_local_date is not None and payment_local_date > threshold
-        ) or (actual is None and _local_date(as_of, self.timezone) > threshold)
+        late = (payment_local_date is not None and payment_local_date > threshold) or (
+            actual is None and _local_date(as_of, self.timezone, "as_of") > threshold
+        )
         if not late or self.late_penalty == 0:
             return Decimal("0"), None
         assert self.penalty_currency is not None

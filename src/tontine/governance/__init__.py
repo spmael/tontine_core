@@ -10,6 +10,7 @@ from enum import StrEnum
 from types import MappingProxyType
 from typing import Any
 
+from tontine._datetime import require_aware_datetime
 from tontine.audit import AuditEvent, AuditEventRegistry
 from tontine.classic import ClassicRotation
 from tontine.exceptions import MissingRecordError
@@ -69,7 +70,11 @@ class Ruleset:
 
 @dataclass
 class RotationProposal:
-    """A voteable rotation change with immutable candidate order and provenance."""
+    """A voteable rotation change with immutable candidate order and provenance.
+
+    ``created_at`` and ``voting_deadline`` must be timezone-aware; construct them
+    with ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
+    """
 
     proposal_id: str
     title: str
@@ -82,6 +87,10 @@ class RotationProposal:
     voting_deadline: datetime
     status: ProposalStatus = ProposalStatus.DRAFT
     votes: dict[str, VoteChoice] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        require_aware_datetime(self.created_at, "created_at")
+        require_aware_datetime(self.voting_deadline, "voting_deadline")
 
 
 class GovernanceRegistry:
@@ -123,8 +132,10 @@ class GovernanceRegistry:
             rotation_order: Candidate order containing every active member once.
             approval_threshold: Required yes-vote percentage from 0 to 100.
             effective_cycle: First cycle using the approved order.
-            created_at: Timezone-aware proposal creation timestamp.
-            voting_deadline: Timezone-aware deadline after creation.
+            created_at: Timezone-aware creation timestamp, constructed with
+                ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
+            voting_deadline: Timezone-aware deadline, constructed with
+                ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
 
         Returns:
             A draft rotation proposal.
@@ -136,10 +147,8 @@ class GovernanceRegistry:
             raise ValueError(f"Proposal {proposal_id!r} already exists.")
         if proposer_id not in self._active_members:
             raise ValueError("Proposal proposer must be an eligible member.")
-        if created_at.tzinfo is None or created_at.utcoffset() is None:
-            raise ValueError("Proposal timestamps must be timezone-aware.")
-        if voting_deadline.tzinfo is None or voting_deadline.utcoffset() is None:
-            raise ValueError("Proposal timestamps must be timezone-aware.")
+        require_aware_datetime(created_at, "created_at")
+        require_aware_datetime(voting_deadline, "voting_deadline")
         if not Decimal("0") < approval_threshold <= Decimal("100"):
             raise ValueError(
                 "Approval threshold must be greater than 0 and at most 100."
@@ -172,18 +181,30 @@ class GovernanceRegistry:
         proposal.status = ProposalStatus.OPEN
         self._audit("proposal_opened", proposal_id, proposal.created_at)
 
-    def vote(self, proposal_id: str, member_id: str, choice: VoteChoice) -> None:
+    def vote(
+        self,
+        proposal_id: str,
+        member_id: str,
+        choice: VoteChoice,
+        *,
+        occurred_at: datetime | None = None,
+    ) -> None:
         """Record one eligible member vote on an open proposal.
 
         Args:
             proposal_id: Proposal receiving the vote.
             member_id: Eligible member submitting the vote.
             choice: Yes, no, or abstain.
+            occurred_at: Optional timezone-aware occurrence time, constructed
+                with ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``. When
+                omitted, the current local time is used.
 
         Raises:
             ValueError: If the proposal is not open, the member is ineligible,
-                or the member has already voted.
+                the member has already voted, or ``occurred_at`` is naive.
         """
+        if occurred_at is not None:
+            require_aware_datetime(occurred_at, "occurred_at")
         proposal = self._proposal(proposal_id)
         if proposal.status is not ProposalStatus.OPEN:
             raise ValueError("Only open proposals can receive votes.")
@@ -191,22 +212,34 @@ class GovernanceRegistry:
             raise ValueError("Voter must be an eligible member.")
         if member_id in proposal.votes:
             raise ValueError(f"Member {member_id!r} has already voted.")
+        event_time = occurred_at or datetime.now().astimezone()
         proposal.votes[member_id] = VoteChoice(choice)
-        self._audit("vote_submitted", proposal_id, datetime.now().astimezone())
+        self._audit("vote_submitted", proposal_id, event_time)
 
-    def evaluate(self, proposal_id: str) -> ProposalStatus:
+    def evaluate(
+        self, proposal_id: str, *, occurred_at: datetime | None = None
+    ) -> ProposalStatus:
         """Evaluate approval using yes votes divided by eligible members.
 
         Args:
             proposal_id: Proposal to evaluate.
+            occurred_at: Optional timezone-aware occurrence time, constructed
+                with ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``. When
+                omitted, the current local time is used.
 
         Returns:
             The proposal's resulting status. Approved rotations become effective
             only at their configured cycle.
+
+        Raises:
+            ValueError: If ``occurred_at`` is naive.
         """
+        if occurred_at is not None:
+            require_aware_datetime(occurred_at, "occurred_at")
         proposal = self._proposal(proposal_id)
         if proposal.status is not ProposalStatus.OPEN:
             return proposal.status
+        event_time = occurred_at or datetime.now().astimezone()
         yes_percentage = (
             Decimal(sum(choice is VoteChoice.YES for choice in proposal.votes.values()))
             / Decimal(len(self._active_members))
@@ -217,12 +250,12 @@ class GovernanceRegistry:
             if yes_percentage >= proposal.approval_threshold
             else ProposalStatus.REJECTED
         )
-        self._audit("proposal_evaluated", proposal_id, datetime.now().astimezone())
+        self._audit("proposal_evaluated", proposal_id, event_time)
         if proposal.status is ProposalStatus.APPROVED:
             self._rotations[proposal.effective_cycle] = (
                 ClassicRotation.from_active_members(proposal.rotation_order)
             )
-            self._audit("rotation_approved", proposal_id, datetime.now().astimezone())
+            self._audit("rotation_approved", proposal_id, event_time)
         return proposal.status
 
     def rotation_for_cycle(self, cycle_number: int) -> ClassicRotation:
@@ -236,13 +269,28 @@ class GovernanceRegistry:
         """Return immutable audit events for a proposal or governance aggregate."""
         return self._audit_registry.events_for("proposal", aggregate_id)
 
-    def add_ruleset(self, ruleset: Ruleset) -> None:
-        """Add a new immutable ruleset version in effective-cycle order."""
+    def add_ruleset(
+        self, ruleset: Ruleset, *, occurred_at: datetime | None = None
+    ) -> None:
+        """Add a new immutable ruleset version in effective-cycle order.
+
+        Args:
+            ruleset: Immutable ruleset to register.
+            occurred_at: Optional timezone-aware occurrence time, constructed
+                with ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``. When
+                omitted, the current local time is used.
+
+        Raises:
+            ValueError: If the version already exists or ``occurred_at`` is naive.
+        """
+        if occurred_at is not None:
+            require_aware_datetime(occurred_at, "occurred_at")
         if any(existing.version == ruleset.version for existing in self._rulesets):
             raise ValueError(f"Ruleset version {ruleset.version} already exists.")
+        event_time = occurred_at or datetime.now().astimezone()
         self._rulesets.append(ruleset)
         self._rulesets.sort(key=lambda item: item.effective_cycle)
-        self._audit("ruleset_added", ruleset.ruleset_id, datetime.now().astimezone())
+        self._audit("ruleset_added", ruleset.ruleset_id, event_time)
 
     def ruleset_for_cycle(self, cycle_number: int) -> Ruleset:
         """Return the latest ruleset effective for a cycle.

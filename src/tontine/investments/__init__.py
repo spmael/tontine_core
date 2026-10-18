@@ -8,6 +8,7 @@ from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from typing import Protocol
 
+from tontine._datetime import require_aware_datetime
 from tontine.audit import AuditEventRegistry
 from tontine.currencies import CurrencyCode
 from tontine.exceptions import DuplicateInvestmentEventError, MissingRecordError
@@ -105,6 +106,8 @@ class AllocationRuleSchedule:
         rule: AllocationRule,
         effective_cycle: int,
         end_cycle: int | None = None,
+        *,
+        occurred_at: datetime | None = None,
     ) -> ScheduledAllocationRule:
         """Add a recurring or bounded allocation-rule version.
 
@@ -114,10 +117,19 @@ class AllocationRuleSchedule:
             rule: Percentage allocation definition totaling 100 percent.
             effective_cycle: First cycle using the rule.
             end_cycle: Optional last cycle using the rule.
+            occurred_at: Optional timezone-aware occurrence time, constructed
+                with ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``. When
+                omitted, the current local time is used.
 
         Returns:
             The immutable scheduled rule.
+
+        Raises:
+            ValueError: If the rule identity, cycle range, or ``occurred_at`` is
+                invalid.
         """
+        if occurred_at is not None:
+            require_aware_datetime(occurred_at, "occurred_at")
         if not rule_id.strip() or version < 1:
             raise ValueError("Allocation rule identity is invalid.")
         if effective_cycle < 1 or (
@@ -125,8 +137,7 @@ class AllocationRuleSchedule:
         ):
             raise ValueError("Allocation rule cycle range is invalid.")
         if any(
-            item.rule_id == rule_id and item.version == version
-            for item in self._rules
+            item.rule_id == rule_id and item.version == version for item in self._rules
         ):
             raise ValueError(f"Allocation rule {rule_id!r} is already registered.")
         scheduled = ScheduledAllocationRule(
@@ -136,21 +147,34 @@ class AllocationRuleSchedule:
             effective_cycle=effective_cycle,
             end_cycle=end_cycle,
         )
+        event_time = occurred_at or datetime.now().astimezone()
         self._rules.append(scheduled)
-        self._record_audit("allocation_rule.added", rule_id, version)
+        self._record_audit("allocation_rule.added", rule_id, version, event_time)
         return scheduled
 
-    def cancel(self, rule_id: str, from_cycle: int) -> None:
+    def cancel(
+        self,
+        rule_id: str,
+        from_cycle: int,
+        *,
+        occurred_at: datetime | None = None,
+    ) -> None:
         """Stop a recurring rule from a cycle onward without mutating history.
 
         Args:
             rule_id: Allocation rule to stop.
             from_cycle: First cycle in which the rule no longer applies.
+            occurred_at: Optional timezone-aware occurrence time, constructed
+                with ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``. When
+                omitted, the current local time is used.
 
         Raises:
             MissingRecordError: If the rule is not registered.
-            ValueError: If the cancellation cycle is not after activation.
+            ValueError: If the cancellation cycle is not after activation or
+                ``occurred_at`` is naive.
         """
+        if occurred_at is not None:
+            require_aware_datetime(occurred_at, "occurred_at")
         if from_cycle < 1:
             raise ValueError("Cancellation cycle must be positive.")
         candidates = [item for item in self._rules if item.rule_id == rule_id]
@@ -159,6 +183,7 @@ class AllocationRuleSchedule:
         current = max(candidates, key=lambda item: item.effective_cycle)
         if from_cycle <= current.effective_cycle:
             raise ValueError("Cancellation must occur after the rule effective cycle.")
+        event_time = occurred_at or datetime.now().astimezone()
         self._rules.remove(current)
         self._rules.append(
             ScheduledAllocationRule(
@@ -170,7 +195,9 @@ class AllocationRuleSchedule:
                 cancelled_from_cycle=from_cycle,
             )
         )
-        self._record_audit("allocation_rule.cancelled", rule_id, current.version)
+        self._record_audit(
+            "allocation_rule.cancelled", rule_id, current.version, event_time
+        )
 
     def rule_for_cycle(self, cycle_number: int) -> ScheduledAllocationRule:
         """Return the latest applicable rule version for a cycle.
@@ -193,7 +220,9 @@ class AllocationRuleSchedule:
             )
         return max(applicable, key=lambda item: item.effective_cycle)
 
-    def _record_audit(self, event_type: str, rule_id: str, version: int) -> None:
+    def _record_audit(
+        self, event_type: str, rule_id: str, version: int, occurred_at: datetime
+    ) -> None:
         if self._audit_registry is None:
             return
         event_number = len(self._audit_registry.all_events()) + 1
@@ -202,7 +231,7 @@ class AllocationRuleSchedule:
             event_type=event_type,
             aggregate_type="allocation_rule",
             aggregate_id=rule_id,
-            occurred_at=datetime.now().astimezone(),
+            occurred_at=occurred_at,
             actor_id=None,
             source_event=None,
             details={"version": version},
@@ -257,7 +286,11 @@ class InvestmentActivityType(StrEnum):
 
 @dataclass(frozen=True)
 class InvestmentActivity:
-    """Immutable record of investment activity without execution behavior."""
+    """Immutable investment activity record without execution behavior.
+
+    ``recorded_at`` must be timezone-aware; construct it with
+    ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
+    """
 
     event_id: str
     event_type: InvestmentActivityType
@@ -273,8 +306,7 @@ class InvestmentActivity:
             raise ValueError("Investment event and asset identifiers are required.")
         if not self.source.strip():
             raise ValueError("Investment activity source is required.")
-        if self.recorded_at.tzinfo is None or self.recorded_at.utcoffset() is None:
-            raise ValueError("Investment activity timestamps must be timezone-aware.")
+        require_aware_datetime(self.recorded_at, "recorded_at")
         object.__setattr__(self, "event_type", InvestmentActivityType(self.event_type))
         object.__setattr__(
             self,
@@ -310,7 +342,8 @@ class InvestmentActivityRegistry:
             amount: Non-negative Decimal-compatible amount.
             currency: ISO 4217 activity currency.
             effective_date: Date on which the activity occurred.
-            recorded_at: Timezone-aware timestamp when it was recorded.
+            recorded_at: Timezone-aware timestamp, constructed with
+                ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
             source: Statement or other supplied provenance source.
 
         Returns:
@@ -436,11 +469,7 @@ class InvestmentValuation:
         normalized_units = _non_negative(units, "Member units")
         if normalized_units > self.units_outstanding:
             raise ValueError("Member units cannot exceed total outstanding units.")
-        return (
-            normalized_units
-            / self.units_outstanding
-            * Decimal("100")
-        )
+        return normalized_units / self.units_outstanding * Decimal("100")
 
     @classmethod
     def from_liabilities(
@@ -563,7 +592,11 @@ class MemberUnitLedger:
 
 @dataclass(frozen=True)
 class FxRate:
-    """Record an externally supplied, timestamped currency-pair exchange rate."""
+    """Record a supplied currency-pair exchange rate.
+
+    ``effective_at`` must be timezone-aware; construct it with
+    ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
+    """
 
     base_currency: CurrencyCode
     quote_currency: CurrencyCode
@@ -578,8 +611,7 @@ class FxRate:
             raise ValueError("FX base and quote currencies must differ.")
         if self.rate <= 0:
             raise ValueError("FX rate must be positive.")
-        if self.effective_at.tzinfo is None or self.effective_at.utcoffset() is None:
-            raise ValueError("FX timestamps must be timezone-aware.")
+        require_aware_datetime(self.effective_at, "effective_at")
         if not self.source.strip():
             raise ValueError("FX rate source is required.")
         object.__setattr__(self, "base_currency", base_currency)
@@ -596,13 +628,20 @@ class FxRateSource(Protocol):
         quote_currency: CurrencyCode,
         effective_at: datetime,
     ) -> FxRate:
-        """Return a supplied FX rate; implementations may live outside the core."""
+        """Return a supplied FX rate for an aware effective instant.
+
+        Construct ``effective_at`` with ``datetime.timezone.utc`` or
+        ``zoneinfo.ZoneInfo``. Implementations may live outside the core.
+        """
 
 
 def is_rate_current(rate: FxRate, as_of: datetime, max_age: timedelta) -> bool:
-    """Return whether a supplied rate is within the caller's freshness policy."""
-    if as_of.tzinfo is None or as_of.utcoffset() is None:
-        raise ValueError("FX policy timestamps must be timezone-aware.")
+    """Return whether a supplied rate is within the caller's freshness policy.
+
+    ``as_of`` must be timezone-aware; construct it with ``datetime.timezone.utc``
+    or ``zoneinfo.ZoneInfo``.
+    """
+    require_aware_datetime(as_of, "as_of")
     if max_age < timedelta(0):
         raise ValueError("FX maximum age must be non-negative.")
     return as_of - rate.effective_at <= max_age

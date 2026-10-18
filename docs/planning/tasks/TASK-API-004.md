@@ -1,8 +1,8 @@
 ---
 id: TASK-API-004
-status: ready
-started: null
-completed: null
+status: shipped
+started: 2026-10-12
+completed: 2026-10-12
 adr_refs: []
 requirements:
   - NFR-API-002
@@ -25,15 +25,15 @@ messages should name the parameter or field and point callers to
 
 ## Acceptance Criteria
 
-- [ ] Update public datetime validation errors to identify the exact field or
+- [x] Update public datetime validation errors to identify the exact field or
   parameter that is naive.
-- [ ] Explain how to supply a timezone-aware value, without converting or
+- [x] Explain how to supply a timezone-aware value, without converting or
   assuming a timezone for naive inputs.
-- [ ] Preserve acceptance of valid timezone-aware inputs and existing timestamp
+- [x] Preserve acceptance of valid timezone-aware inputs and existing timestamp
   semantics.
-- [ ] Add focused tests for naive inputs, aware inputs, and actionable message
+- [x] Add focused tests for naive inputs, aware inputs, and actionable message
   content across affected public APIs.
-- [ ] Update public docstrings where datetime inputs or their timezone
+- [x] Update public docstrings where datetime inputs or their timezone
   requirements need clarification.
 
 ## Planned Changes
@@ -44,6 +44,7 @@ messages should name the parameter or field and point callers to
 - `src/tontine/investments/`
 - `src/tontine/governance/`
 - `src/tontine/audit/`
+- `src/tontine/_datetime.py`
 - Relevant tests under `tests/`
 
 ## Validation
@@ -56,4 +57,6 @@ uv run mypy src
 
 ## Completion Notes
 
-<What changed, evidence produced, and any remaining gap.>
+Shared strict datetime validation now names the invalid field and explains how
+to construct an aware datetime. Naive values are still rejected; aware values
+retain their existing timezone conversion and comparison semantics.

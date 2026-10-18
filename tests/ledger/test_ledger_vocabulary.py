@@ -68,7 +68,13 @@ def test_journal_entry_requires_timezone_aware_provenance() -> None:
     assert journal.recorded_at.tzinfo is UTC
     assert journal.entries[0].currency == "XAF"
 
-    with pytest.raises(ValueError, match="timezone-aware"):
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"recorded_at must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
         JournalEntry(
             journal_id="journal-002",
             recorded_at=datetime(2027, 1, 15, 12, 0),

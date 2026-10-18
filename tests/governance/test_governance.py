@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal
 
 import pytest
@@ -9,6 +9,7 @@ from tontine.exceptions import MissingRecordError
 from tontine.governance import (
     GovernanceRegistry,
     ProposalStatus,
+    RotationProposal,
     Ruleset,
     VoteChoice,
 )
@@ -50,6 +51,10 @@ def test_rotation_proposal_requires_votes_and_activates_at_effective_cycle(
     activated = governance.rotation_for_cycle(6)
     assert activated.recipient_for_cycle(1) == "member-e"
     assert governance.audit_events("proposal-1")
+    assert all(
+        event.occurred_at.tzinfo is not None
+        for event in governance.audit_events("proposal-1")
+    )
     assert proposal.status is ProposalStatus.APPROVED
 
 
@@ -74,6 +79,90 @@ def test_governance_uses_shared_audit_registry() -> None:
     )
 
     assert audit_registry.events_for("proposal", "proposal-shared")
+
+
+def test_governance_mutations_preserve_explicit_audit_times() -> None:
+    audit_registry = AuditEventRegistry()
+    governance = GovernanceRegistry(
+        active_member_ids=("member-a",),
+        initial_rotation=ClassicRotation.from_active_members(("member-a",)),
+        audit_registry=audit_registry,
+    )
+    governance.create_rotation_proposal(
+        proposal_id="proposal-timed",
+        title="Timed proposal",
+        description="Use caller-supplied occurrence times.",
+        proposer_id="member-a",
+        rotation_order=("member-a",),
+        approval_threshold=Decimal("100"),
+        effective_cycle=2,
+        created_at=datetime(2027, 1, 1, tzinfo=UTC),
+        voting_deadline=datetime(2027, 1, 2, tzinfo=UTC),
+    )
+    governance.open_proposal("proposal-timed")
+    vote_time = datetime(2027, 1, 3, tzinfo=timezone(timedelta(hours=5, minutes=30)))
+    evaluation_time = datetime(
+        2027, 1, 4, tzinfo=timezone(timedelta(hours=-4))
+    )
+    ruleset_time = datetime(2027, 1, 5, tzinfo=timezone(timedelta(hours=2)))
+
+    governance.vote(
+        "proposal-timed", "member-a", VoteChoice.YES, occurred_at=vote_time
+    )
+    assert governance.evaluate(
+        "proposal-timed", occurred_at=evaluation_time
+    ) is ProposalStatus.APPROVED
+    governance.add_ruleset(
+        Ruleset("rules-timed", 1, 1, {"contribution_amount": "30000"}),
+        occurred_at=ruleset_time,
+    )
+
+    events = {event.event_type: event for event in audit_registry.all_events()}
+    assert events["vote_submitted"].occurred_at is vote_time
+    assert events["proposal_evaluated"].occurred_at is evaluation_time
+    assert events["rotation_approved"].occurred_at is evaluation_time
+    assert events["ruleset_added"].occurred_at is ruleset_time
+
+
+def test_governance_rejects_naive_occurrence_times_without_mutating_state() -> None:
+    governance = GovernanceRegistry(
+        active_member_ids=("member-a",),
+        initial_rotation=ClassicRotation.from_active_members(("member-a",)),
+    )
+    proposal = governance.create_rotation_proposal(
+        proposal_id="proposal-naive-time",
+        title="Naive time",
+        description="Reject timestamps without timezone information.",
+        proposer_id="member-a",
+        rotation_order=("member-a",),
+        approval_threshold=Decimal("100"),
+        effective_cycle=2,
+        created_at=datetime(2027, 1, 1, tzinfo=UTC),
+        voting_deadline=datetime(2027, 1, 2, tzinfo=UTC),
+    )
+    governance.open_proposal("proposal-naive-time")
+    naive_time = datetime(2027, 1, 3)
+    expected_error = (
+        r"occurred_at must be timezone-aware.*datetime\.timezone\.utc.*"
+        r"zoneinfo\.ZoneInfo"
+    )
+
+    with pytest.raises(ValueError, match=expected_error):
+        governance.vote(
+            "proposal-naive-time", "member-a", VoteChoice.YES, occurred_at=naive_time
+        )
+    with pytest.raises(ValueError, match=expected_error):
+        governance.evaluate("proposal-naive-time", occurred_at=naive_time)
+    with pytest.raises(ValueError, match=expected_error):
+        governance.add_ruleset(
+            Ruleset("rules-naive-time", 1, 1, {}),
+            occurred_at=naive_time,
+        )
+
+    assert proposal.votes == {}
+    assert proposal.status is ProposalStatus.OPEN
+    with pytest.raises(MissingRecordError, match="No ruleset"):
+        governance.ruleset_for_cycle(1)
 
 
 def test_governance_rejects_duplicate_and_ineligible_votes(
@@ -144,14 +233,28 @@ def test_governance_rejects_invalid_proposal_inputs(
     }
     with pytest.raises(ValueError, match="eligible"):
         governance.create_rotation_proposal(**{**base, "proposer_id": "missing"})
-    with pytest.raises(ValueError, match="timezone-aware"):
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"created_at must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
         governance.create_rotation_proposal(
             **{**base, "created_at": datetime(2027, 1, 2)}
         )
-    with pytest.raises(ValueError, match="cycle and dates"):
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"voting_deadline must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
         governance.create_rotation_proposal(
-            **{**base, "effective_cycle": 0}
+            **{**base, "voting_deadline": datetime(2027, 1, 3)}
         )
+    with pytest.raises(ValueError, match="cycle and dates"):
+        governance.create_rotation_proposal(**{**base, "effective_cycle": 0})
 
 
 def test_rotation_proposal_rejects_invalid_threshold_and_order(
@@ -171,18 +274,42 @@ def test_rotation_proposal_rejects_invalid_threshold_and_order(
         )
 
 
+def test_rotation_proposal_rejects_naive_datetime_fields() -> None:
+    arguments = {
+        "proposal_id": "proposal-1",
+        "title": "New rotation",
+        "description": "Approve a new recipient order.",
+        "proposer_id": "member-a",
+        "rotation_order": ("member-a", "member-b"),
+        "approval_threshold": Decimal("60"),
+        "effective_cycle": 2,
+        "created_at": datetime(2027, 1, 1, tzinfo=UTC),
+        "voting_deadline": datetime(2027, 1, 2, tzinfo=UTC),
+    }
+
+    for field_name in ("created_at", "voting_deadline"):
+        with pytest.raises(
+            ValueError,
+            match=(
+                rf"{field_name} must be timezone-aware.*datetime\.timezone\.utc.*"
+                r"zoneinfo\.ZoneInfo"
+            ),
+        ):
+            RotationProposal(**{**arguments, field_name: datetime(2027, 1, 1)})
+
+
 def test_rulesets_are_versioned_by_effective_cycle(
     governance: GovernanceRegistry,
 ) -> None:
-    governance.add_ruleset(
-        Ruleset("rules-v1", 1, 1, {"contribution_amount": "30000"})
-    )
-    governance.add_ruleset(
-        Ruleset("rules-v2", 2, 6, {"contribution_amount": "35000"})
-    )
+    governance.add_ruleset(Ruleset("rules-v1", 1, 1, {"contribution_amount": "30000"}))
+    governance.add_ruleset(Ruleset("rules-v2", 2, 6, {"contribution_amount": "35000"}))
 
     assert governance.ruleset_for_cycle(5).ruleset_id == "rules-v1"
     assert governance.ruleset_for_cycle(6).ruleset_id == "rules-v2"
+    assert all(
+        event.occurred_at.tzinfo is not None
+        for event in governance.audit_events("rules-v1")
+    )
 
     with pytest.raises(ValueError, match="(?i)rotation"):
         governance.create_rotation_proposal(

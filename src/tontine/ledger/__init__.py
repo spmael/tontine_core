@@ -7,6 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 
+from tontine._datetime import require_aware_datetime
 from tontine.currencies import CurrencyCode
 from tontine.exceptions import DuplicateJournalError, MissingRecordError
 
@@ -52,7 +53,11 @@ class LedgerEntry:
 
 @dataclass(frozen=True)
 class JournalEntry:
-    """Immutable journal record with timestamp and source-event provenance."""
+    """Immutable journal record with timestamp and source-event provenance.
+
+    ``recorded_at`` must be timezone-aware; construct it with
+    ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
+    """
 
     journal_id: str
     recorded_at: datetime
@@ -69,8 +74,7 @@ class JournalEntry:
             raise ValueError("Journal description is required.")
         if not self.source_event.strip():
             raise ValueError("Journal source event is required.")
-        if self.recorded_at.tzinfo is None or self.recorded_at.utcoffset() is None:
-            raise ValueError("Journal timestamps must be timezone-aware.")
+        require_aware_datetime(self.recorded_at, "recorded_at")
         object.__setattr__(self, "entries", tuple(self.entries))
 
 
@@ -139,7 +143,8 @@ class InMemoryLedgerRepository:
         Args:
             journal_id: Identifier for the new reversal journal.
             original_journal_id: Identifier of the posted journal to reverse.
-            recorded_at: Timezone-aware timestamp for the reversal.
+            recorded_at: Timezone-aware timestamp for the reversal, constructed
+                with ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
 
         Returns:
             The immutable reversal journal.
@@ -185,7 +190,8 @@ class InMemoryLedgerRepository:
             journal_id: Identifier for the new adjustment journal.
             original_journal_id: Identifier of the journal being adjusted.
             entries: Balanced Decimal entries for the adjustment.
-            recorded_at: Timezone-aware timestamp for the adjustment.
+            recorded_at: Timezone-aware timestamp for the adjustment, constructed
+                with ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
             description: Human-readable correction description.
 
         Returns:

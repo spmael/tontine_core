@@ -226,7 +226,13 @@ def test_cycle_rejects_naive_timestamps() -> None:
     cycle = ContributionCycle("cycle-3", date(2027, 1, 1), date(2027, 1, 7), "UTC")
     cycle.add_expected_contribution("member-1", Decimal("1"))
 
-    with pytest.raises(ValueError, match="timezone-aware"):
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"payment_date must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
         cycle.record_contribution(
             "member-1",
             Decimal("1"),

@@ -73,5 +73,15 @@ def test_rejects_invalid_payout_fields() -> None:
         }
         fields.update(invalid_fields)
 
-        with pytest.raises(ValueError):
-            ClassicPayout(**fields)
+        if "recorded_at" in invalid_fields:
+            with pytest.raises(
+                ValueError,
+                match=(
+                    r"recorded_at must be timezone-aware.*datetime\.timezone\.utc.*"
+                    r"zoneinfo\.ZoneInfo"
+                ),
+            ):
+                ClassicPayout(**fields)
+        else:
+            with pytest.raises(ValueError):
+                ClassicPayout(**fields)

@@ -7,12 +7,17 @@ from dataclasses import dataclass
 from datetime import datetime
 from types import MappingProxyType
 
+from tontine._datetime import require_aware_datetime
 from tontine.exceptions import DuplicateAuditEventError
 
 
 @dataclass(frozen=True)
 class AuditEvent:
-    """Immutable audit record for a significant domain event."""
+    """Immutable audit record for a significant domain event.
+
+    ``occurred_at`` must be timezone-aware; construct it with
+    ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
+    """
 
     event_id: str
     event_type: str
@@ -32,8 +37,7 @@ class AuditEvent:
         ):
             if not value.strip():
                 raise ValueError(f"{label} is required.")
-        if self.occurred_at.tzinfo is None or self.occurred_at.utcoffset() is None:
-            raise ValueError("Audit timestamps must be timezone-aware.")
+        require_aware_datetime(self.occurred_at, "occurred_at")
         object.__setattr__(self, "details", MappingProxyType(dict(self.details)))
 
 
@@ -62,7 +66,8 @@ class AuditEventRegistry:
             event_type: Stable event category such as ``vote.submitted``.
             aggregate_type: Domain aggregate category.
             aggregate_id: Identifier of the affected aggregate.
-            occurred_at: Timezone-aware event timestamp.
+            occurred_at: Timezone-aware event timestamp, constructed with
+                ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
             actor_id: Optional actor responsible for the event.
             source_event: Optional originating domain-event identifier.
             details: JSON-like audit details preserved as read-only data.

@@ -104,5 +104,11 @@ def test_activity_rejects_invalid_identifiers_amounts_and_timestamps() -> None:
         registry.record_activity(**{**arguments, "event_id": " "})
     with pytest.raises(ValueError, match="non-negative"):
         registry.record_activity(**{**arguments, "amount": Decimal("-1")})
-    with pytest.raises(ValueError, match="timezone-aware"):
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"recorded_at must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
         registry.record_activity(**{**arguments, "recorded_at": datetime(2027, 1, 1)})

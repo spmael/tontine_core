@@ -7,6 +7,7 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 
+from tontine._datetime import require_aware_datetime
 from tontine.currencies import CurrencyCode
 from tontine.exceptions import DuplicatePayoutError
 
@@ -110,7 +111,11 @@ def can_pay_out(
 
 @dataclass(frozen=True)
 class ClassicPayout:
-    """Immutable record of a classic cycle payout decision."""
+    """Immutable record of a classic cycle payout decision.
+
+    ``recorded_at`` must be timezone-aware; construct it with
+    ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
+    """
 
     cycle_number: int
     recipient_id: str
@@ -126,8 +131,7 @@ class ClassicPayout:
             raise ValueError("Payout recipient is required.")
         if not self.source_event.strip():
             raise ValueError("Payout source event is required.")
-        if self.recorded_at.tzinfo is None or self.recorded_at.utcoffset() is None:
-            raise ValueError("Payout timestamps must be timezone-aware.")
+        require_aware_datetime(self.recorded_at, "recorded_at")
         object.__setattr__(self, "amount", _decimal_amount(self.amount))
         object.__setattr__(self, "currency", CurrencyCode(str(self.currency)))
 
@@ -147,7 +151,11 @@ class ClassicPayoutRegistry:
         recorded_at: datetime,
         source_event: str,
     ) -> ClassicPayout:
-        """Record a payout without initiating or processing payment."""
+        """Record a payout with an explicit timezone-aware occurrence time.
+
+        ``recorded_at`` must be aware; construct it with ``datetime.timezone.utc``
+        or ``zoneinfo.ZoneInfo``.
+        """
         if cycle_number in self._payouts:
             raise DuplicatePayoutError(
                 f"Cycle {cycle_number} already has a recorded payout."
