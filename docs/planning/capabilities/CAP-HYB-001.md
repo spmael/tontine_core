@@ -1,9 +1,10 @@
 ---
 id: CAP-HYB-001
-status: backlog
+status: ready
 started: null
 completed: null
-adr_refs: []
+adr_refs:
+  - ADR-006
 depends_on:
   - CAP-CON-001
   - CAP-CLASSIC-001
@@ -45,6 +46,8 @@ member settlement view without duplicating financial state.
 - [ ] Derive the investment share and unit issuance from a recorded contribution
   and applicable valuation.
 - [ ] Prevent duplicate issuance for a contribution.
+- [ ] Give persistence adapters a repository contract and contract tests for
+  the one-allocation-per-contribution key, and emit hybrid audit events.
 - [ ] Apply an explicit policy for late and missed contributions.
 - [ ] Report dues, unpaid rotation entitlement, and units in one settlement
   position.
@@ -54,9 +57,25 @@ member settlement view without duplicating financial state.
 
 ## Implementation Tasks
 
-Task decomposition is intentionally deferred until split, late/missed
-contribution, and exit policies are reviewed in
-[`../../architecture/next-version-gap-architecture.md`](../../architecture/next-version-gap-architecture.md).
+Policies are decided in
+[ADR-006](../../architecture/adr/ADR-006-hybrid-contribution-allocation.md).
+Tasks are listed in delivery order.
+
+- [TASK-HYB-001](../tasks/TASK-HYB-001.md) - ready: versioned hybrid rules
+- [TASK-HYB-002](../tasks/TASK-HYB-002.md) - ready: pot and fund split
+- [TASK-HYB-003](../tasks/TASK-HYB-003.md) - ready: once-only unit issuance
+- [TASK-HYB-004](../tasks/TASK-HYB-004.md) - ready: allocation reversals
+- [TASK-GOV-007](../tasks/TASK-GOV-007.md) - ready: exit and waiver decisions
+  with recusal
+- [TASK-HYB-005](../tasks/TASK-HYB-005.md) - ready: partial payments, arrears,
+  catch-up, and collateral
+- [TASK-HYB-006](../tasks/TASK-HYB-006.md) - ready: member exit and entitlement
+- [TASK-HYB-007](../tasks/TASK-HYB-007.md) - ready: combined settlement report
+- [TASK-HYB-008](../tasks/TASK-HYB-008.md) - ready: allocation repository
+  contract, adapter guidance, and audit wiring
+
+The Kolo adapter's unique database constraint on the allocation key is built in
+the adapter project against the TASK-HYB-008 contract tests.
 
 ## Verification
 

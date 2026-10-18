@@ -2,7 +2,7 @@
 
 _Reverse index of package capability and task citations. Regenerate with `uv run python .agents/skills/pdlc/scripts/adr_index.py`; do not hand-edit._
 
-**5 of 5 ADRs are cited by planning records.**
+**6 of 6 ADRs are cited by planning records.**
 
 ## ADR-001-ledger-precision-and-rounding
 
@@ -26,4 +26,17 @@ _Reverse index of package capability and task citations. Regenerate with `uv run
 ## ADR-005-investment-activity-and-valuation-policy
 
 - [CAP-INV-002](../../planning/capabilities/CAP-INV-002.md)
+
+## ADR-006-hybrid-contribution-allocation
+
+- [CAP-HYB-001](../../planning/capabilities/CAP-HYB-001.md)
+- [TASK-GOV-007](../../planning/tasks/TASK-GOV-007.md)
+- [TASK-HYB-001](../../planning/tasks/TASK-HYB-001.md)
+- [TASK-HYB-002](../../planning/tasks/TASK-HYB-002.md)
+- [TASK-HYB-003](../../planning/tasks/TASK-HYB-003.md)
+- [TASK-HYB-004](../../planning/tasks/TASK-HYB-004.md)
+- [TASK-HYB-005](../../planning/tasks/TASK-HYB-005.md)
+- [TASK-HYB-006](../../planning/tasks/TASK-HYB-006.md)
+- [TASK-HYB-007](../../planning/tasks/TASK-HYB-007.md)
+- [TASK-HYB-008](../../planning/tasks/TASK-HYB-008.md)
 

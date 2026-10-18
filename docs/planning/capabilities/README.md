@@ -37,7 +37,7 @@ are reviewed.
 | CAP-INV-002 | Investment activity query and validation | FR-INV-006..009 | backlog | Empty valuation and currency policy remain open |
 | CAP-LEDGER-002 | Point-in-time ledger projections | FR-LDG-005, NFR-PERF-001 | backlog | Preserve immutable journal source of truth |
 | CAP-MEM-001 | Member shares and responsibilities | FR-MEM-001..002 | backlog | Share identity and conflict policy remain open |
-| CAP-HYB-001 | Hybrid contribution allocation | FR-HYB-001..005 | backlog | Split, missed-payment, and exit rules remain open |
+| CAP-HYB-001 | Hybrid contribution allocation | FR-HYB-001..005 | ready | Policies decided in ADR-006; tasks decomposed |
 | CAP-API-002 | Actionable public API errors and time semantics | NFR-API-001..002 | backlog | No silent defaults or built-in lookup errors |
 
 ## First Vertical Slice

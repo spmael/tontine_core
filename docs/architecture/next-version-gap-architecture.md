@@ -123,7 +123,9 @@ open; the capability backlog must not be treated as choosing an answer:
    rotations.
 8. Hybrid rules: split units, whether the rule applies to expected or actually
    received contribution amounts, late/missed treatment, and exit/settlement
-   behavior.
+   behavior. Resolved by ADR-006: split received amounts in basis points,
+   price late and catch-up units at the valuation in force when paid and exits
+   forward, and settle every exit through a governance decision.
 9. Separation of duties: which responsibility combinations conflict and
     whether conflicts reject updates or are returned as findings.
 
