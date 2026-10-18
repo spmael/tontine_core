@@ -1,9 +1,10 @@
 ---
 id: CAP-GOV-002
-status: backlog
-started: null
-completed: null
-adr_refs: []
+status: shipped
+started: 2026-10-18
+completed: 2026-10-18
+adr_refs:
+  - ADR-004
 depends_on:
   - CAP-GOV-001
   - CAP-CLASSIC-002
@@ -39,28 +40,32 @@ explicit eligibility, approval, cycle, deadline, and occurrence-time context.
 
 ## Acceptance Criteria
 
-- [ ] Support decision proposals whose approved effects are not inherently
+- [x] Support decision proposals whose approved effects are not inherently
   rotation changes.
-- [ ] Expose eligible, yes, no, abstain, and not-voted counts with evaluation
+- [x] Expose eligible, yes, no, abstain, and not-voted counts with evaluation
   outcomes.
-- [ ] Apply explicit threshold, quorum, participation, and proposal-closing
+- [x] Apply explicit threshold, quorum, participation, and proposal-closing
   policies.
-- [ ] Preserve proposal eligibility context across later membership changes.
-- [ ] Validate future effective cycles and provide actionable domain errors.
-- [ ] Reject votes after the deadline and preserve caller-supplied audit times.
-- [ ] Support a one-cycle rotation exception without replacing the base order.
+- [x] Preserve proposal eligibility context across later membership changes.
+- [x] Validate future effective cycles and provide actionable domain errors.
+- [x] Reject votes after the deadline and preserve caller-supplied audit times.
+- [x] Support a one-cycle rotation exception without replacing the base order.
 
 ## Implementation Tasks
 
-Task decomposition is intentionally deferred until the open policy decisions in
-[`../../architecture/next-version-gap-architecture.md`](../../architecture/next-version-gap-architecture.md)
-are reviewed.
+- [x] [TASK-GOV-003](../tasks/TASK-GOV-003.md): Add explicit proposal
+  eligibility, approval rules, deadlines, and evaluation tallies.
+- [x] [TASK-GOV-004](../tasks/TASK-GOV-004.md): Add typed governance effects for
+  rotation exceptions and ruleset activation.
+- [x] [TASK-GOV-005](../tasks/TASK-GOV-005.md): Add versioned governance
+  snapshots and deterministic rehydration.
 
 ## Verification
 
-- Unit tests: proposal lifecycle, membership changes, deadline boundaries,
-  tally/quorum cases, cycle validation, explicit times, and exception scope.
-- Integration tests: public governance API tests with an approved rotation effect
-  and a non-rotation decision.
-- Manual review: approval policy, electorate semantics, and decision-effect
-  provenance.
+- Unit tests cover proposal lifecycle, membership changes, deadline boundaries,
+  two-thirds quorum/tally cases, cycle validation, snapshot restoration, and
+  exception scope.
+- Public governance API tests cover approved/rejected rotation, exception, and
+  ruleset effects, plus deterministic snapshot rehydration.
+- Manual review confirms electorate stability, explicit decision provenance,
+  and the persistence-adapter boundary.

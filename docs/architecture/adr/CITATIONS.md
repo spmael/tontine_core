@@ -1,18 +1,25 @@
 # ADR Citation Index (generated)
 
-_Reverse index of package capability and task citations. Regenerate with `uv run python .claude/skills/pdlc/scripts/adr_index.py`; do not hand-edit._
+_Reverse index of package capability and task citations. Regenerate with `uv run python .agents/skills/pdlc/scripts/adr_index.py`; do not hand-edit._
 
-**0 of 3 ADRs are cited by planning records.**
+**4 of 4 ADRs are cited by planning records.**
 
 ## ADR-001-ledger-precision-and-rounding
 
-_No capability or task currently cites this ADR._
+- [CAP-LEDGER-001](../../planning/capabilities/CAP-LEDGER-001.md)
 
 ## ADR-002-classic-rotation-selection
 
-_No capability or task currently cites this ADR._
+- [CAP-CLASSIC-001](../../planning/capabilities/CAP-CLASSIC-001.md)
 
 ## ADR-003-external-fx-rate-boundary
 
-_No capability or task currently cites this ADR._
+- [CAP-INV-001](../../planning/capabilities/CAP-INV-001.md)
+
+## ADR-004-governance-decision-lifecycle
+
+- [CAP-GOV-002](../../planning/capabilities/CAP-GOV-002.md)
+- [TASK-GOV-003](../../planning/tasks/TASK-GOV-003.md)
+- [TASK-GOV-004](../../planning/tasks/TASK-GOV-004.md)
+- [TASK-GOV-005](../../planning/tasks/TASK-GOV-005.md)
 

@@ -23,11 +23,17 @@ def frontmatter_block(text: str) -> str:
 
 def list_field(frontmatter: str, key: str) -> list[str]:
     """Read an inline or indented YAML list field from frontmatter."""
-    match = re.search(rf"^{re.escape(key)}:\s*(\[.*?\])?\s*$", frontmatter, re.MULTILINE)
+    match = re.search(
+        rf"^{re.escape(key)}:[ \t]*(\[.*?\])?[ \t]*$", frontmatter, re.MULTILINE
+    )
     if not match:
         return []
     if match.group(1):
-        return [item.strip().strip("'\"") for item in match.group(1)[1:-1].split(",") if item.strip()]
+        return [
+            item.strip().strip("'\"")
+            for item in match.group(1)[1:-1].split(",")
+            if item.strip()
+        ]
 
     values: list[str] = []
     for line in frontmatter[match.end() :].splitlines():
@@ -68,12 +74,16 @@ def main(
         "# ADR Citation Index (generated)",
         "",
         "_Reverse index of package capability and task citations. Regenerate with "
-        "`uv run python .claude/skills/pdlc/scripts/adr_index.py`; do not hand-edit._",
+        "`uv run python .agents/skills/pdlc/scripts/adr_index.py`; do not hand-edit._",
         "",
     ]
     cited = 0
     for adr in adr_files:
-        references = sorted(citations.get(adr.stem, []))
+        adr_id_match = re.match(r"^ADR-\d+", adr.stem)
+        adr_id = adr_id_match.group(0) if adr_id_match else adr.stem
+        references = sorted(
+            set(citations.get(adr.stem, []) + citations.get(adr_id, []))
+        )
         output.extend([f"## {adr.stem}", ""])
         if references:
             cited += 1
@@ -84,7 +94,9 @@ def main(
             output.append("_No capability or task currently cites this ADR._")
         output.append("")
 
-    output.insert(4, f"**{cited} of {len(adr_files)} ADRs are cited by planning records.**\n")
+    output.insert(
+        4, f"**{cited} of {len(adr_files)} ADRs are cited by planning records.**\n"
+    )
     output_path = adr_root / "CITATIONS.md"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text("\n".join(output) + "\n", encoding="utf-8")

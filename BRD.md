@@ -219,15 +219,28 @@ does not retrieve market prices or FX rates automatically.
 
 ### 5.7 Governance and audit
 
-Rulesets are immutable versions with positive versions and effective cycles. The
-current implementation resolves rulesets by effective cycle; it does not attach
-ruleset identifiers to historical financial or audit events.
-Rotation proposals validate eligible proposers, candidate member order, approval
-thresholds, cycle numbers, and timezone-aware dates.
+Rulesets are immutable versions with positive versions and effective cycles.
+Governance can propose and approve a ruleset activation or a classic rotation
+change, including a one-cycle recipient override that leaves the base rotation
+available for payout and unpaid-contribution policy calculations.
+Ruleset activation does not attach ruleset identifiers to historical financial
+events.
 
-Governance supports draft and open proposals, one-member-one-vote choices of yes,
-no, and abstain, duplicate-vote prevention, threshold evaluation, and effective
-rotation selection. Approval evaluation produces approved or rejected status;
+Proposals freeze their eligible electorate at creation and require explicit
+current-cycle context; the effective cycle must be later than the current cycle.
+Approval uses yes votes divided by the frozen electorate and a two-thirds quorum
+rounded up to a whole voter. Yes, no, and abstain votes count toward quorum;
+abstentions do not count as yes votes. A zero quorum remains available for
+threshold-only policy. A vote at the deadline is accepted and later votes are
+rejected. Early evaluation is permitted only after all eligible members have
+voted; otherwise evaluation waits until the deadline. Proposal effects are
+applied only on approval.
+
+Governance mutations require caller-supplied timezone-aware occurrence times.
+The registry supports immutable schema-versioned snapshots and deterministic
+rehydration; audit events preserve provenance but are not replayed as the
+canonical state source. Serialization formats and persistence adapters remain
+outside the core. Approval evaluation produces approved or rejected status;
 expire and cancel transitions are not currently implemented. Governance actions
 are recorded in an append-only audit registry.
 
