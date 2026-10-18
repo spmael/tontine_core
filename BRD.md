@@ -45,6 +45,7 @@ The implementation currently provides the following domain capabilities:
 - contribution rules and contribution cycles;
 - expected, received, pending, partial, late, and missed contributions;
 - classic rotation recipient selection and payout calculation;
+- reproducible classic rotation generation with immutable randomization provenance;
 - classic payout records and duplicate-payout prevention;
 - unpaid-contribution payout policy evaluation;
 - financial-account records with masked references and custody metadata;
@@ -132,6 +133,12 @@ current package behavior.
 A classic rotation contains an ordered, unique, non-empty set of active member
 identifiers. Cycle recipient selection is deterministic and wraps after the last
 member. Expected payout is the exact `Decimal` sum of member contributions.
+
+A rotation may be generated from an active-member set and explicit seed. The
+immutable rotation retains the seed, algorithm version, canonical input member
+set, generated order, initiating actor, and timezone-aware occurrence time so
+adapters can persist and later verify its provenance. Recipient lookup uses the
+recorded order and does not randomize again.
 
 Payout records require a positive cycle number, recipient, non-negative amount,
 valid currency, timezone-aware timestamp, and source event. Duplicate payouts for
