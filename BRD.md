@@ -46,6 +46,7 @@ The implementation currently provides the following domain capabilities:
 - expected, received, pending, partial, late, and missed contributions;
 - classic rotation recipient selection and payout calculation;
 - reproducible classic rotation generation with immutable randomization provenance;
+- effective-cycle classic rotation versions and approved one-cycle recipient overrides;
 - classic payout records and duplicate-payout prevention;
 - unpaid-contribution payout policy evaluation;
 - financial-account records with masked references and custody metadata;
@@ -139,6 +140,21 @@ immutable rotation retains the seed, algorithm version, canonical input member
 set, generated order, initiating actor, and timezone-aware occurrence time so
 adapters can persist and later verify its provenance. Recipient lookup uses the
 recorded order and does not randomize again.
+
+Rotation schedules contain immutable versions with positive version numbers and
+effective cycles. The latest effective cycle applies; the highest version number
+breaks a tie at the same effective cycle. Adding a version returns a new schedule,
+so existing schedule instances and earlier effective-cycle resolutions remain
+unchanged.
+
+An approved one-cycle exception overrides only the selected recipient for that
+cycle. The recipient must belong to the effective rotation. The exception does
+not shift later recipients, change the base rotation, alter the expected payout,
+or change unpaid-contribution eligibility. It records its proposal and approval
+event references and an aware approval time. The schedule consumes this approved
+effect without replaying governance proposals or votes; proposal creation and
+approval remain governance behavior. No durable persistence is provided by the
+core package.
 
 Payout records require a positive cycle number, recipient, non-negative amount,
 valid currency, timezone-aware timestamp, and source event. Duplicate payouts for

@@ -45,7 +45,9 @@ Implementation task decomposition is intentionally deferred.
   rotation versions. Governance may approve a version, but resolving the order
   for a cycle must not require replaying every proposal and vote.
 - A one-cycle rotation exception must remain scoped to its approved cycle and
-  leave the base rotation intact.
+  replace only that cycle's recipient. It does not shift other recipients or
+  change payout amount or unpaid-contribution eligibility; the base order stays
+  intact and the recipient must belong to the effective rotation.
 - These boundaries are tracked by FR-GOV-005..011, FR-CLS-005, CAP-GOV-002,
   and CAP-CLASSIC-002.
 
@@ -110,25 +112,24 @@ open; the capability backlog must not be treated as choosing an answer:
    have voted.
 4. Proposal timing: which boundary supplies the current cycle and time, and how
    to handle an already-open or already-closed effective cycle.
-5. Rotation exceptions: whether the exception inserts, replaces, or otherwise
-   modifies a recipient slot, and how payout amount/eligibility is derived.
-6. Investment valuation with zero units: a tagged empty result versus a dedicated
+5. Investment valuation with zero units: a tagged empty result versus a dedicated
    constructor/value, and which fields are meaningful in that state.
-7. Cross-currency investment activity: reject mismatched currency, or accept an
+6. Cross-currency investment activity: reject mismatched currency, or accept an
    explicit conversion record with a defined accounting point.
-8. Shares: whether share identity belongs to membership, a participation
+7. Shares: whether share identity belongs to membership, a participation
    aggregate, or a separate domain entity, and how share changes affect existing
    rotations.
-9. Hybrid rules: split units, whether the rule applies to expected or actually
+8. Hybrid rules: split units, whether the rule applies to expected or actually
    received contribution amounts, late/missed treatment, and exit/settlement
    behavior.
-10. Separation of duties: which responsibility combinations conflict and
+9. Separation of duties: which responsibility combinations conflict and
     whether conflicts reject updates or are returned as findings.
 
 ## Delivery Guardrails
 
-- Treat all requirements in the next-version section as proposed backlog, not
-  implemented behavior or a change to Version 1 guarantees.
+- Treat unimplemented requirements in the next-version section as proposed
+  backlog. Reflect shipped behavior in the current baseline without implying
+  changes to unrelated Version 1 guarantees.
 - Keep persistence, database, network, payment, and web-framework adapters
   outside the domain core.
 - Do not change the ledger source-of-truth rule, add implicit financial

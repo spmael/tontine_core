@@ -12,6 +12,13 @@ from tontine._datetime import require_aware_datetime
 from tontine.currencies import CurrencyCode
 from tontine.exceptions import DuplicatePayoutError
 
+from .rotation_schedule import (
+    ApprovedRotationException,
+    ClassicRotationResolution,
+    ClassicRotationSchedule,
+    ClassicRotationVersion,
+)
+
 _RANDOMIZATION_ALGORITHM_VERSION = "sha256-fisher-yates-v1"
 _RANDOMIZATION_DOMAIN = b"tontine-core/classic-rotation/sha256-fisher-yates-v1\0"
 _UINT64_RANGE = 1 << 64
@@ -327,9 +334,13 @@ class ClassicPayoutRegistry:
 
 
 __all__ = [
+    "ApprovedRotationException",
     "ClassicPayout",
     "ClassicPayoutRegistry",
     "ClassicRotation",
+    "ClassicRotationResolution",
+    "ClassicRotationSchedule",
+    "ClassicRotationVersion",
     "RotationRandomizationProvenance",
     "UnpaidContributionPolicy",
     "can_pay_out",

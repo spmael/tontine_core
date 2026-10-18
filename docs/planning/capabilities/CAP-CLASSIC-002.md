@@ -1,8 +1,8 @@
 ---
 id: CAP-CLASSIC-002
-status: backlog
-started: null
-completed: null
+status: shipped
+started: 2026-10-18
+completed: 2026-10-18
 adr_refs: []
 depends_on:
   - CAP-CLASSIC-001
@@ -24,32 +24,36 @@ single-cycle exception without mutating the base order.
 ## Domain Boundary
 
 - Inputs: effective-cycle rotation versions and approved, cycle-scoped exceptions
-- Outputs: deterministic recipient order for a requested cycle
+- Outputs: deterministic base rotation version and selected recipient for a cycle
 - Invariants: resolution uses the latest applicable version; historical orders
-  remain unchanged; exceptions do not leak into other cycles
+  remain unchanged; a higher version breaks an effective-cycle tie; exceptions
+  replace only one cycle's recipient and do not leak into other cycles
 - Exclusions: proposal voting, randomized order generation, payment execution,
   and persistence adapters
 
 ## Acceptance Criteria
 
-- [ ] Resolve a cycle's order from rotation versions independently of proposal
+- [x] Resolve a cycle's order from rotation versions independently of proposal
   and vote replay.
-- [ ] Keep version ordering deterministic for equal or conflicting effective
-  cycles.
-- [ ] Represent an approved one-cycle exception without changing the base order.
-- [ ] Reject invalid recipients, positions, and exception cycle scope.
-- [ ] Preserve historical rotation resolution after later versions are added.
+- [x] Keep version ordering deterministic for equal or conflicting effective
+  cycles by selecting the highest version number at the latest effective cycle.
+- [x] Represent an approved one-cycle exception without changing the base order.
+- [x] Reject invalid rotation orders, exception recipients, and exception cycle
+  scope.
+- [x] Preserve historical rotation resolution after later versions are added.
 
 ## Implementation Tasks
 
-Task decomposition is intentionally deferred until rotation-exception semantics
-are reviewed in
-[`../../architecture/next-version-gap-architecture.md`](../../architecture/next-version-gap-architecture.md).
+- [x] [TASK-CLASSIC-005](../tasks/TASK-CLASSIC-005.md): Add immutable
+  effective-cycle rotation versions.
+- [x] [TASK-CLASSIC-006](../tasks/TASK-CLASSIC-006.md): Apply approved one-cycle
+  recipient overrides.
 
 ## Verification
 
-- Unit tests: effective-cycle resolution, boundary cycles, invalid versions,
-  exception application, and restoration of the base order afterward.
-- Integration tests: resolution does not construct or replay a governance
-  registry.
-- Manual review: rotation immutability and approval-effect boundary.
+- Unit tests: `tests/classic/test_rotation_schedule.py` covers effective-cycle
+  resolution, deterministic version ties, invalid versions, exception scope,
+  payout/policy invariants, and restoration of the base order.
+- Public API tests construct and resolve the schedule without a governance
+  registry; proposal approval lifecycle remains in `CAP-GOV-002`.
+- Manual review confirms immutable schedule updates and recipient-only effects.
