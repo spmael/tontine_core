@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from hashlib import sha256
+from typing import TYPE_CHECKING
 
 from tontine._datetime import require_aware_datetime
 from tontine.currencies import CurrencyCode
@@ -18,6 +20,9 @@ from .rotation_schedule import (
     ClassicRotationSchedule,
     ClassicRotationVersion,
 )
+
+if TYPE_CHECKING:
+    from tontine.members import ParticipationShare
 
 _RANDOMIZATION_ALGORITHM_VERSION = "sha256-fisher-yates-v1"
 _RANDOMIZATION_DOMAIN = b"tontine-core/classic-rotation/sha256-fisher-yates-v1\0"
@@ -154,6 +159,28 @@ class ClassicRotation:
         if len(set(active_member_ids)) != len(active_member_ids):
             raise ValueError("Rotation contains duplicate active members.")
         return cls(tuple(active_member_ids))
+
+    @classmethod
+    def from_active_shares(
+        cls,
+        shares: Iterable[ParticipationShare],
+        cycle_number: int,
+    ) -> ClassicRotation:
+        """Create a rotation from shares active in the supplied cycle.
+
+        Args:
+            shares: Ordered share records whose IDs form the rotation positions.
+            cycle_number: One-based cycle for which all shares must be active.
+
+        Raises:
+            ValueError: If any share is inactive or the resulting IDs are invalid.
+        """
+        active_shares = tuple(shares)
+        if any(not share.is_active_for(cycle_number) for share in active_shares):
+            raise ValueError("Rotation shares must be active in the specified cycle.")
+        return cls.from_active_members(
+            tuple(str(share.share_id) for share in active_shares)
+        )
 
     @classmethod
     def randomized(

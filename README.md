@@ -38,8 +38,10 @@ The package provides focused, composable domain primitives rather than one
 large application object:
 
 - **Groups and members:** validated groups, optional jurisdiction metadata,
-  member roles, residence metadata, membership start dates, and lifecycle
-  transitions.
+  member roles, residence metadata, membership start dates, lifecycle
+  transitions, stable cycle-effective participation shares, and configurable
+  responsibility-conflict findings. Multiple shares do not multiply a person's
+  governance vote.
 - **Contributions:** daily, weekly, and monthly rules; contribution cycles;
   pending, paid, partial, late, and missed statuses; outstanding totals; and
   separate fixed penalty assessments.
@@ -61,6 +63,29 @@ large application object:
   decisions, approval thresholds, and effective rotations.
 - **Reporting and repositories:** structured member/group statements and typed
   in-memory repository implementations suitable for application adapters.
+
+### Participation shares
+
+`ParticipationShare` gives each per-share position a stable ID, an owning member,
+and an inclusive effective cycle. `ParticipationShareRegistry` returns active
+shares by cycle and resolves a share back to its member. Retiring a share takes
+effect at the supplied cycle; it does not rewrite an existing rotation version.
+Governance continues to use member IDs, so multiple shares do not create
+additional votes.
+
+Use `ContributionCycle.add_expected_share_contribution` and
+`record_share_contribution` to track each active share separately. Returned
+`ShareContribution` records retain both the share ID and owner member ID.
+`ClassicRotation.from_active_shares` creates share-keyed rotations, and
+`ClassicRotationSchedule.resolve_member_for_cycle` resolves the selected share
+to its owner. For exact same-currency reporting, pass share-keyed `Decimal`
+amounts to `ParticipationShareRegistry.roll_up_amounts` with the effective
+cycle and ISO 4217 currency code.
+
+Responsibilities are separate from `MemberRole`. Configure
+`ResponsibilityConflictChecker` with incompatible pairs and call
+`find_conflicts` to receive deterministic same-member, same-scope findings;
+findings do not reject assignments or enforce application permissions.
 
 ### Hybrid policy schedules
 

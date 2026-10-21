@@ -10,6 +10,8 @@ from tontine._datetime import require_aware_datetime
 from tontine.exceptions import MissingRecordError
 
 if TYPE_CHECKING:
+    from tontine.members import ParticipationShareRegistry
+
     from . import ClassicRotation
 
 
@@ -203,4 +205,35 @@ class ClassicRotationSchedule:
             rotation_version=version,
             recipient_id=recipient_id,
             exception=exception,
+        )
+
+    def resolve_member_for_cycle(
+        self,
+        cycle_number: int,
+        share_registry: ParticipationShareRegistry,
+    ) -> str:
+        """Resolve a cycle's rotation recipient to the owning person.
+
+        The stored rotation and any approved exception continue to reference
+        stable share IDs; this method returns their owner for member-level
+        payout and reporting boundaries.
+
+        Args:
+            cycle_number: Positive cycle to resolve.
+            share_registry: Registry containing the effective share ownership.
+
+        Returns:
+            Owning member identifier for the selected share.
+
+        Raises:
+            MissingRecordError: If no rotation is effective for the cycle.
+            KeyError: If the selected share is not registered.
+            ValueError: If the selected share is inactive for the cycle.
+        """
+        resolution = self.resolve_cycle(cycle_number)
+        return str(
+            share_registry.member_for_share(
+                resolution.recipient_id,
+                cycle_number,
+            )
         )

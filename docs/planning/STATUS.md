@@ -9,12 +9,12 @@ _Generated from capability and task frontmatter._
 
 ## Summary
 
-- backlog: 1
+- backlog: 0
 - blocked: 0
 - in_progress: 0
 - partial: 0
 - ready: 0
-- shipped: 83
+- shipped: 87
 
 ## Items
 
@@ -36,7 +36,7 @@ _Generated from capability and task frontmatter._
 | capability | CAP-LEDGER-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-LEDGER-002 | shipped | 2026-10-21 | 2026-10-21 | domain |
 | capability | CAP-LOCATION-001 | shipped | 2026-09-13 | 2026-09-13 | domain |
-| capability | CAP-MEM-001 | backlog | null | null | domain |
+| capability | CAP-MEM-001 | shipped | 2026-10-21 | 2026-10-21 | domain |
 | capability | CAP-PACKAGE-001 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
 | capability | CAP-REPORT-001 | shipped | 2026-09-12 | 2026-09-12 | reporting |
 | capability | CAP-STATE-001 | shipped | 2026-10-18 | 2026-10-21 | package-boundary |
@@ -92,6 +92,9 @@ _Generated from capability and task frontmatter._
 | task | TASK-LEDGER-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-LEDGER-004 | shipped | 2026-10-21 | 2026-10-21 | domain |
 | task | TASK-LOCATION-001 | shipped | 2026-09-13 | 2026-09-13 | domain |
+| task | TASK-MEM-001 | shipped | 2026-10-21 | 2026-10-21 | domain |
+| task | TASK-MEM-002 | shipped | 2026-10-21 | 2026-10-21 | domain |
+| task | TASK-MEM-003 | shipped | 2026-10-21 | 2026-10-21 | domain |
 | task | TASK-PACKAGE-001 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
 | task | TASK-PACKAGE-002 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
 | task | TASK-PACKAGE-003 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |

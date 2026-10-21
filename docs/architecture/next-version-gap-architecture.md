@@ -79,11 +79,14 @@ Implementation task decomposition is intentionally deferred.
 - Distinguish a person from that person's participation shares/slots. Where rules
   act per share, each share needs a stable identity; governance eligibility and
   voting remain person-based unless a future decision explicitly changes that
-  rule.
+  rule. ADR-008 resolves share ownership and cycle-effective changes: immutable
+  share identities belong to a member, share changes do not rewrite existing
+  rotation versions, and governance remains one vote per person.
 - Keep organizational responsibilities separate from the closed domain role
   vocabulary and from application authentication/authorization.
 - Model separation-of-duties checks as domain validation/reporting, without
-  granting or enforcing application permissions.
+  granting or enforcing application permissions. ADR-008 resolves conflicts as
+  configurable same-scope findings, not assignment rejection.
 - These boundaries are tracked by FR-MEM-001..002 and CAP-MEM-001.
 
 ### Hybrid Rotation and Investment Behavior
@@ -117,16 +120,14 @@ open; the capability backlog must not be treated as choosing an answer:
 4. Cross-currency investment activity: reject mismatched currency, or accept an
     explicit conversion record with a defined accounting point. Resolved by
     ADR-005: accepted only with an explicit `FxRate`; derived amount unrounded.
-5. Shares: whether share identity belongs to membership, a participation
-    aggregate, or a separate domain entity, and how share changes affect existing
-    rotations.
+5. Shares: resolved by ADR-008.
 6. Hybrid rules: split units, whether the rule applies to expected or actually
     received contribution amounts, late/missed treatment, and exit/settlement
     behavior. Resolved by ADR-006: split received amounts in basis points,
     price late and catch-up units at the valuation in force when paid and exits
     forward, and settle every exit through a governance decision.
-7. Separation of duties: which responsibility combinations conflict and
-    whether conflicts reject updates or are returned as findings.
+7. Separation of duties: resolved by ADR-008 as configurable findings that do
+    not reject updates.
 
 ## Delivery Guardrails
 

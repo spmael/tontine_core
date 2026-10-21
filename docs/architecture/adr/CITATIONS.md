@@ -2,7 +2,7 @@
 
 _Reverse index of package capability and task citations. Regenerate with `uv run python .agents/skills/pdlc/scripts/adr_index.py`; do not hand-edit._
 
-**7 of 7 ADRs are cited by planning records.**
+**8 of 8 ADRs are cited by planning records.**
 
 ## ADR-001-ledger-precision-and-rounding
 
@@ -44,9 +44,17 @@ _Reverse index of package capability and task citations. Regenerate with `uv run
 ## ADR-007-state-interchange-contract
 
 - [CAP-STATE-001](../../planning/capabilities/CAP-STATE-001.md)
+- [TASK-LEDGER-004](../../planning/tasks/TASK-LEDGER-004.md)
 - [TASK-STATE-001](../../planning/tasks/TASK-STATE-001.md)
 - [TASK-STATE-002](../../planning/tasks/TASK-STATE-002.md)
 - [TASK-STATE-003](../../planning/tasks/TASK-STATE-003.md)
 - [TASK-STATE-004](../../planning/tasks/TASK-STATE-004.md)
 - [TASK-STATE-005](../../planning/tasks/TASK-STATE-005.md)
+
+## ADR-008-member-shares-and-responsibility-conflicts
+
+- [CAP-MEM-001](../../planning/capabilities/CAP-MEM-001.md)
+- [TASK-MEM-001](../../planning/tasks/TASK-MEM-001.md)
+- [TASK-MEM-002](../../planning/tasks/TASK-MEM-002.md)
+- [TASK-MEM-003](../../planning/tasks/TASK-MEM-003.md)
 

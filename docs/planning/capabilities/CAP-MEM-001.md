@@ -1,9 +1,10 @@
 ---
 id: CAP-MEM-001
-status: backlog
-started: null
-completed: null
-adr_refs: []
+status: shipped
+started: 2026-10-21
+completed: 2026-10-21
+adr_refs:
+  - ADR-008
 depends_on:
   - CAP-GROUP-001
   - CAP-CLASSIC-001
@@ -35,19 +36,22 @@ operational responsibilities remain separate from domain roles.
 
 ## Acceptance Criteria
 
-- [ ] Represent multiple stable participation shares for one member.
-- [ ] Allow share-level contribution and rotation positions with person-level
+- [x] Represent multiple stable participation shares for one member.
+- [x] Allow share-level contribution and rotation positions with person-level
   reporting roll-up.
-- [ ] Keep governance eligibility and voting person-based.
-- [ ] Model responsibilities separately from the existing role vocabulary.
-- [ ] Detect configured incompatible responsibility assignments without
+- [x] Keep governance eligibility and voting person-based.
+- [x] Model responsibilities separately from the existing role vocabulary.
+- [x] Detect configured incompatible responsibility assignments without
   implementing application authorization.
 
 ## Implementation Tasks
 
-Task decomposition is intentionally deferred until share identity and
-responsibility-conflict semantics are reviewed in
-[`../../architecture/next-version-gap-architecture.md`](../../architecture/next-version-gap-architecture.md).
+- [TASK-MEM-001](../tasks/TASK-MEM-001.md) - shipped: stable share identity and
+  effective-cycle lifecycle
+- [TASK-MEM-002](../tasks/TASK-MEM-002.md) - shipped: share-level contribution and
+  rotation positions with person-level roll-up
+- [TASK-MEM-003](../tasks/TASK-MEM-003.md) - shipped: configurable responsibility
+  conflict findings
 
 ## Verification
 

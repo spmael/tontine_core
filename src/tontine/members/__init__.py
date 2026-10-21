@@ -8,16 +8,17 @@ from enum import StrEnum
 from tontine.countries import CountryCode
 from tontine.exceptions import InvalidMembershipTransitionError
 
-
-class MemberId(str):
-    """Strongly-typed member identifier."""
-
-    def __new__(cls, value: str) -> MemberId:
-        if not value or not value.strip():
-            raise ValueError("Member identifier is required.")
-        if any(char.isspace() for char in value):
-            raise ValueError("Member identifier cannot contain whitespace.")
-        return str.__new__(cls, value)
+from .identity import MemberId
+from .participation import (
+    ParticipationShare,
+    ParticipationShareId,
+    ParticipationShareRegistry,
+)
+from .responsibilities import (
+    ResponsibilityAssignment,
+    ResponsibilityConflict,
+    ResponsibilityConflictChecker,
+)
 
 
 class MemberRole(StrEnum):
@@ -135,11 +136,16 @@ class Member:
             f"role={self.role.value!r}, status={self.status.value!r})"
         )
 
-
 __all__ = [
     "CountryCode",
     "Member",
     "MemberId",
     "MemberRole",
     "MembershipStatus",
+    "ParticipationShare",
+    "ParticipationShareId",
+    "ParticipationShareRegistry",
+    "ResponsibilityAssignment",
+    "ResponsibilityConflict",
+    "ResponsibilityConflictChecker",
 ]

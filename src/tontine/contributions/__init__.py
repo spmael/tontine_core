@@ -7,11 +7,15 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from enum import StrEnum
+from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from tontine._datetime import require_aware_datetime
 from tontine.exceptions import DuplicateContributionError, MissingRecordError
 from tontine.groups import CurrencyCode
+
+if TYPE_CHECKING:
+    from tontine.members import ParticipationShare
 
 
 class ContributionFrequency(StrEnum):
@@ -232,6 +236,26 @@ class Contribution:
         if self.payment_date is not None:
             require_aware_datetime(self.payment_date, "payment_date")
 
+    @property
+    def participant_id(self) -> str:
+        """Return the member or share identifier used as the cycle key."""
+        return self.member_id
+
+
+@dataclass(frozen=True)
+class ShareContribution:
+    """Contribution record paired with its share and owning member identity."""
+
+    share_id: str
+    member_id: str
+    contribution: Contribution
+
+    def __post_init__(self) -> None:
+        if not self.share_id.strip() or not self.member_id.strip():
+            raise ValueError("Share contribution identities are required.")
+        if self.contribution.participant_id != self.share_id:
+            raise ValueError("Contribution participant must match the share ID.")
+
 
 @dataclass
 class ContributionCycle:
@@ -320,6 +344,30 @@ class ContributionCycle:
         if member_id in self.expected_contributions:
             raise ValueError(f"Expected contribution already exists for {member_id!r}.")
         self.expected_contributions[member_id] = _decimal_amount(amount)
+
+    def add_expected_share_contribution(
+        self,
+        share: ParticipationShare,
+        cycle_number: int,
+        amount: Decimal | int | str,
+    ) -> None:
+        """Add an expected amount for a share active in the specified cycle.
+
+        Args:
+            share: Stable share record that owns this cycle contribution.
+            cycle_number: One-based effective cycle for the contribution.
+            amount: Non-negative amount in the contribution cycle currency units.
+
+        Raises:
+            ValueError: If the share is inactive, duplicated, or the amount is
+                invalid.
+        """
+        if not share.is_active_for(cycle_number):
+            raise ValueError(
+                f"Participation share {share.share_id!r} is not active in "
+                f"cycle {cycle_number}."
+            )
+        self.add_expected_contribution(str(share.share_id), amount)
 
     @property
     def expected_total(self) -> Decimal:
@@ -428,6 +476,60 @@ class ContributionCycle:
         self.recorded_contributions[member_id] = contribution
         return contribution
 
+    def record_share_contribution(
+        self,
+        share: ParticipationShare,
+        cycle_number: int,
+        actual_amount: Decimal | int | str | None,
+        payment_date: datetime | None = None,
+        as_of: datetime | None = None,
+        external_reference: str | None = None,
+        notes: str | None = None,
+        adjustment: bool = False,
+    ) -> ShareContribution:
+        """Record a share contribution and retain the owning member identity.
+
+        The share identifier is the cycle participant key; the returned wrapper
+        also carries the person who owns that share for person-level reporting.
+
+        Args:
+            share: Stable share record that owns this cycle contribution.
+            cycle_number: One-based effective cycle for the contribution.
+            actual_amount: Received amount in cycle currency units, or ``None``.
+            payment_date: Optional timezone-aware payment timestamp.
+            as_of: Optional timezone-aware status reference timestamp.
+            external_reference: Optional caller-supplied receipt reference.
+            notes: Optional contribution note.
+            adjustment: Whether to replace an existing share contribution.
+
+        Returns:
+            The contribution paired with its share and owning member IDs.
+
+        Raises:
+            DuplicateContributionError: If a record exists without adjustment.
+            ValueError: If the share is inactive, expected amount is missing,
+                or the contribution or timestamps are invalid.
+        """
+        if not share.is_active_for(cycle_number):
+            raise ValueError(
+                f"Participation share {share.share_id!r} is not active in "
+                f"cycle {cycle_number}."
+            )
+        record = self.record_contribution(
+            str(share.share_id),
+            actual_amount,
+            payment_date,
+            as_of,
+            external_reference,
+            notes,
+            adjustment,
+        )
+        return ShareContribution(
+            share_id=str(share.share_id),
+            member_id=str(share.member_id),
+            contribution=record,
+        )
+
     def _derive_status(
         self,
         expected: Decimal,
@@ -502,4 +604,5 @@ __all__ = [
     "ContributionStatus",
     "CycleStatus",
     "DueDateConvention",
+    "ShareContribution",
 ]
