@@ -116,9 +116,11 @@ unit-ledger state; restoration validates recorded references without rerunning
 governance approval, valuation, settlement, or payment workflows.
 
 The ledger keeps immutable posted journals as its source of truth and maintains
-current account/currency balances as a derived projection. Use
+current account/currency balances as a derived projection. `balance_for` accepts
+an optional timezone-aware `as_of` instant; reversals and adjustments affect
+historical balances from their own `recorded_at` timestamps. Use
 `InMemoryLedgerRepository.rebuild_balance_projection()` to validate and rebuild
-that projection from `journals()`.
+the current and historical projections from `journals()`.
 
 `HybridSettlementHistory.from_registries` snapshots allocation, arrears, and
 exit records alongside contribution cycles, payouts, and the rule schedule.

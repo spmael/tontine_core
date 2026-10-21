@@ -1,5 +1,7 @@
-from datetime import UTC, datetime
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -79,6 +81,102 @@ def test_repository_rejects_mixed_currency_entries() -> None:
 
     with pytest.raises(ValueError, match="one currency"):
         LedgerRepository().post(mixed)
+
+
+def test_balance_for_includes_journals_at_inclusive_as_of_boundary() -> None:
+    repository = LedgerRepository()
+    posted = journal()
+    repository.post(posted)
+
+    assert repository.balance_for(
+        "cash-xaf",
+        "XAF",
+        as_of=datetime(2027, 1, 15, 11, 59, tzinfo=UTC),
+    ) == Decimal("0")
+    assert repository.balance_for(
+        "cash-xaf",
+        "XAF",
+        as_of=posted.recorded_at,
+    ) == Decimal("150000")
+    assert repository.balance_for(
+        "cash-xaf",
+        "XAF",
+        as_of=datetime(2027, 1, 15, 13, tzinfo=timezone(timedelta(hours=1))),
+    ) == Decimal("150000")
+
+
+def test_historical_projection_handles_out_of_order_posts_and_rebuild() -> None:
+    repository = LedgerRepository()
+    later = replace(
+        journal("later", Decimal("100"), Decimal("100")),
+        recorded_at=datetime(2027, 1, 20, 12, tzinfo=UTC),
+    )
+    earlier = replace(
+        journal("earlier", Decimal("50"), Decimal("50")),
+        recorded_at=datetime(2027, 1, 10, 12, tzinfo=UTC),
+    )
+    same_time = replace(
+        journal("same-time", Decimal("25"), Decimal("25")),
+        recorded_at=later.recorded_at,
+    )
+    repository.post(later)
+    repository.post(earlier)
+    repository.post(same_time)
+
+    assert repository.balance_for(
+        "cash-xaf",
+        "XAF",
+        as_of=datetime(2027, 1, 15, 12, tzinfo=UTC),
+    ) == Decimal("50")
+    assert repository.balance_for(
+        "cash-xaf",
+        "XAF",
+        as_of=later.recorded_at,
+    ) == Decimal("175")
+    assert repository.balance_for("cash-xaf", "XAF") == Decimal("175")
+
+    repository._balances.clear()
+    repository._balance_history.clear()
+    repository.rebuild_balance_projection()
+
+    assert repository.balance_for(
+        "cash-xaf",
+        "XAF",
+        as_of=datetime(2027, 1, 15, 12, tzinfo=UTC),
+    ) == Decimal("50")
+    assert repository.balance_for(
+        "cash-xaf",
+        "XAF",
+        as_of=later.recorded_at,
+    ) == Decimal("175")
+
+
+def test_balance_for_rejects_naive_as_of_without_changing_balances() -> None:
+    repository = LedgerRepository()
+    repository.post(journal())
+
+    with pytest.raises(ValueError, match="as_of must be timezone-aware"):
+        repository.balance_for("cash-xaf", "XAF", as_of=datetime(2027, 1, 20))
+
+    assert repository.balance_for("cash-xaf", "XAF") == Decimal("150000")
+
+
+def test_balance_for_distinguishes_repeated_local_time_by_fold() -> None:
+    repository = LedgerRepository()
+    local_zone = ZoneInfo("America/New_York")
+    recorded_at = datetime(2027, 11, 7, 1, 30, tzinfo=local_zone, fold=1)
+    repository.post(replace(journal(), recorded_at=recorded_at))
+
+    assert repository.balance_for(
+        "cash-xaf",
+        "XAF",
+        as_of=datetime(2027, 11, 7, 1, 30, tzinfo=local_zone, fold=0),
+    ) == Decimal("0")
+    assert repository.balance_for(
+        "cash-xaf",
+        "XAF",
+        as_of=recorded_at,
+    ) == Decimal("150000")
 
 
 def test_projection_tracks_multiple_accounts_and_currencies_and_rebuilds() -> None:

@@ -30,12 +30,12 @@ are reviewed.
 
 | ID | Capability | Requirements | Status | Planning note |
 | --- | --- | --- | --- | --- |
-| CAP-STATE-001 | Stateful registry contracts | FR-API-004, FR-LDG-006, NFR-PERF-001 | in_progress | Versioned non-ledger snapshots; journal-derived projections |
+| CAP-STATE-001 | Stateful registry contracts | FR-API-004, FR-LDG-006, NFR-PERF-001 | shipped | Versioned non-ledger snapshots; journal-derived projections |
 | CAP-GOV-002 | Reusable governance decisions | FR-GOV-005..009, FR-GOV-011 | backlog | Approval and temporal policies remain open |
 | CAP-CLASSIC-002 | Versioned rotations and exceptions | FR-CLS-005, FR-GOV-010 | backlog | Exception semantics remain open |
 | CAP-CON-002 | Contribution penalty and time inputs | FR-CON-007, NFR-API-002 | backlog | Preserve strict timezone-aware inputs |
 | CAP-INV-002 | Investment activity query and validation | FR-INV-006..009 | backlog | Empty valuation and currency policy remain open |
-| CAP-LEDGER-002 | Point-in-time ledger projections | FR-LDG-005, NFR-PERF-001 | backlog | Preserve immutable journal source of truth |
+| CAP-LEDGER-002 | Point-in-time ledger projections | FR-LDG-005, NFR-PERF-001 | shipped | Preserve immutable journal source of truth |
 | CAP-MEM-001 | Member shares and responsibilities | FR-MEM-001..002 | backlog | Share identity and conflict policy remain open |
 | CAP-HYB-001 | Hybrid contribution allocation | FR-HYB-001..005 | in_progress | Versioned rules shipped; allocation and exit tasks remain |
 | CAP-API-002 | Actionable public API errors and time semantics | NFR-API-001..002 | backlog | No silent defaults or built-in lookup errors |

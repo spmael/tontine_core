@@ -1,8 +1,8 @@
 ---
 id: CAP-LEDGER-002
-status: backlog
-started: null
-completed: null
+status: shipped
+started: 2026-10-21
+completed: 2026-10-21
 adr_refs: []
 depends_on:
   - CAP-LEDGER-001
@@ -32,17 +32,17 @@ explicit historical instant without implementing full journal replay per read.
 
 ## Acceptance Criteria
 
-- [ ] Support a timezone-aware point-in-time balance query.
-- [ ] Include only posted journals recorded on or before the requested instant.
-- [ ] Avoid requiring application consumers to replay all journal history for
+- [x] Support a timezone-aware point-in-time balance query.
+- [x] Include only posted journals recorded on or before the requested instant.
+- [x] Avoid requiring application consumers to replay all journal history for
   each balance read.
-- [ ] Keep any indexes or checkpoints derived from immutable journal records.
-- [ ] Preserve current balance behavior when no `as_of` instant is supplied.
+- [x] Keep any indexes or checkpoints derived from immutable journal records.
+- [x] Preserve current balance behavior when no `as_of` instant is supplied.
 
 ## Implementation Tasks
 
-Task decomposition is intentionally deferred until the state contract and
-projection boundary are reviewed.
+- [TASK-LEDGER-004](../tasks/TASK-LEDGER-004.md) - shipped: indexed
+  point-in-time account balances
 
 ## Verification
 

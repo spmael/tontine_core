@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from bisect import bisect_left, bisect_right
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import StrEnum
 
@@ -85,6 +86,10 @@ class InMemoryLedgerRepository:
         self._journals: list[JournalEntry] = []
         self._journal_ids: set[str] = set()
         self._balances: dict[tuple[LedgerAccountId, CurrencyCode], Decimal] = {}
+        self._balance_history: dict[
+            tuple[LedgerAccountId, CurrencyCode],
+            list[tuple[datetime, Decimal]],
+        ] = {}
 
     def post(self, journal: JournalEntry) -> None:
         """Post a balanced journal and update its derived balance projection.
@@ -102,18 +107,52 @@ class InMemoryLedgerRepository:
                 f"Journal {journal.journal_id!r} is already posted."
             )
         self._validate_journal(journal)
-        updates: dict[tuple[LedgerAccountId, CurrencyCode], Decimal] = {}
+        deltas: dict[tuple[LedgerAccountId, CurrencyCode], Decimal] = {}
         for entry in journal.entries:
             key = (entry.account_id, entry.currency)
-            balance = updates.get(key, self._balances.get(key, Decimal("0")))
-            updates[key] = balance + (
+            deltas[key] = deltas.get(key, Decimal("0")) + (
                 entry.amount
                 if entry.direction is EntryDirection.DEBIT
                 else -entry.amount
             )
+        balance_updates = {
+            key: self._balances.get(key, Decimal("0")) + delta
+            for key, delta in deltas.items()
+        }
+        history_updates = {
+            key: self._insert_historical_delta(
+                self._balance_history.get(key, []),
+                journal.recorded_at,
+                delta,
+            )
+            for key, delta in deltas.items()
+        }
         self._journals.append(journal)
         self._journal_ids.add(journal.journal_id)
-        self._balances.update(updates)
+        self._balances.update(balance_updates)
+        self._balance_history.update(history_updates)
+
+    @staticmethod
+    def _insert_historical_delta(
+        history: list[tuple[datetime, Decimal]],
+        recorded_at: datetime,
+        delta: Decimal,
+    ) -> list[tuple[datetime, Decimal]]:
+        recorded_at = recorded_at.astimezone(UTC)
+        index = bisect_left(history, recorded_at, key=lambda item: item[0])
+        updated = list(history)
+        if index < len(history) and history[index][0] == recorded_at:
+            for position in range(index, len(history)):
+                timestamp, balance = history[position]
+                updated[position] = (timestamp, balance + delta)
+            return updated
+
+        previous_balance = history[index - 1][1] if index else Decimal("0")
+        updated.insert(index, (recorded_at, previous_balance + delta))
+        for position in range(index + 1, len(updated)):
+            timestamp, balance = updated[position]
+            updated[position] = (timestamp, balance + delta)
+        return updated
 
     @staticmethod
     def _validate_journal(journal: JournalEntry) -> None:
@@ -158,6 +197,10 @@ class InMemoryLedgerRepository:
         the derived in-memory account/currency projection.
         """
         balances: dict[tuple[LedgerAccountId, CurrencyCode], Decimal] = {}
+        balance_history: dict[
+            tuple[LedgerAccountId, CurrencyCode],
+            list[tuple[datetime, Decimal]],
+        ] = {}
         journal_ids: set[str] = set()
         for journal in self._journals:
             if journal.journal_id in journal_ids:
@@ -166,14 +209,24 @@ class InMemoryLedgerRepository:
                 )
             self._validate_journal(journal)
             journal_ids.add(journal.journal_id)
+            deltas: dict[tuple[LedgerAccountId, CurrencyCode], Decimal] = {}
             for entry in journal.entries:
                 key = (entry.account_id, entry.currency)
-                balances[key] = balances.get(key, Decimal("0")) + (
+                delta = (
                     entry.amount
                     if entry.direction is EntryDirection.DEBIT
                     else -entry.amount
                 )
+                deltas[key] = deltas.get(key, Decimal("0")) + delta
+            for key, delta in deltas.items():
+                balances[key] = balances.get(key, Decimal("0")) + delta
+                balance_history[key] = self._insert_historical_delta(
+                    balance_history.get(key, []),
+                    journal.recorded_at,
+                    delta,
+                )
         self._balances = balances
+        self._balance_history = balance_history
         self._journal_ids = journal_ids
 
     def reverse(
@@ -266,10 +319,32 @@ class InMemoryLedgerRepository:
         except StopIteration as exc:
             raise MissingRecordError(f"Journal {journal_id!r} was not found.") from exc
 
-    def balance_for(self, account_id: str, currency: str) -> Decimal:
-        """Return the derived balance in one currency, with debits positive."""
+    def balance_for(
+        self,
+        account_id: str,
+        currency: str,
+        *,
+        as_of: datetime | None = None,
+    ) -> Decimal:
+        """Return a derived debit-positive balance in one currency.
+
+        Args:
+            account_id: Logical ledger account identifier.
+            currency: ISO currency code for the balance.
+            as_of: Optional timezone-aware instant; journals recorded at or
+                before this instant are included.
+
+        Raises:
+            ValueError: If ``as_of`` is not timezone-aware.
+        """
         key = (LedgerAccountId(account_id), CurrencyCode(currency))
-        return self._balances.get(key, Decimal("0"))
+        if as_of is None:
+            return self._balances.get(key, Decimal("0"))
+        require_aware_datetime(as_of, "as_of")
+        as_of = as_of.astimezone(UTC)
+        history = self._balance_history.get(key, [])
+        index = bisect_right(history, as_of, key=lambda item: item[0])
+        return history[index - 1][1] if index else Decimal("0")
 
 
 __all__ = [
