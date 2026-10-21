@@ -87,6 +87,87 @@ Responsibilities are separate from `MemberRole`. Configure
 `find_conflicts` to receive deterministic same-member, same-scope findings;
 findings do not reject assignments or enforce application permissions.
 
+```python
+from datetime import UTC, date, datetime
+from decimal import Decimal
+
+from tontine.classic import ClassicRotation, ClassicRotationSchedule, ClassicRotationVersion
+from tontine.contributions import ContributionCycle
+from tontine.members import ParticipationShare, ParticipationShareRegistry
+
+shares = ParticipationShareRegistry()
+first = ParticipationShare("share-001", "member-001", effective_cycle=1)
+second = ParticipationShare("share-002", "member-001", effective_cycle=1)
+shares.register(first)
+shares.register(second)
+
+cycle = ContributionCycle(
+    "2027-01",
+    date(2027, 1, 1),
+    date(2027, 1, 31),
+    "UTC",
+)
+records = []
+for share, amount in ((first, Decimal("100")), (second, Decimal("150"))):
+    cycle.add_expected_share_contribution(share, 1, amount)
+    records.append(
+        cycle.record_share_contribution(
+            share,
+            1,
+            amount,
+            as_of=datetime(2027, 1, 15, tzinfo=UTC),
+        )
+    )
+
+member_totals = shares.roll_up_amounts(
+    {
+        record.share_id: record.contribution.actual_amount
+        for record in records
+        if record.contribution.actual_amount is not None
+    },
+    cycle_number=1,
+    currency="XAF",
+)
+assert next(iter(member_totals.values())) == Decimal("250")
+
+rotation = ClassicRotation.from_active_shares(shares.shares_for_cycle(1), 1)
+schedule = ClassicRotationSchedule(
+    (
+        ClassicRotationVersion(
+            1, 1, rotation, source_event="rotation-approved-1"
+        ),
+    )
+)
+assert schedule.resolve_member_for_cycle(1, shares) == "member-001"
+```
+
+Retiring a share with `shares.retire("share-002", effective_cycle=3)` makes it
+inactive from cycle 3 onward; it does not mutate earlier rotation versions.
+The rotation still records share IDs, while `resolve_member_for_cycle` resolves
+the selected share to its owner. Governance continues to accept member IDs, not
+share IDs.
+
+```python
+from tontine.members import (
+    ResponsibilityAssignment,
+    ResponsibilityConflictChecker,
+)
+
+checker = ResponsibilityConflictChecker([("treasurer", "reviewer")])
+findings = checker.find_conflicts(
+    (
+        ResponsibilityAssignment(
+            "assignment-1", "member-001", "treasurer", "group-1"
+        ),
+        ResponsibilityAssignment(
+            "assignment-2", "member-001", "reviewer", "group-1"
+        ),
+    )
+)
+assert len(findings) == 1
+assert findings[0].responsibilities == ("reviewer", "treasurer")
+```
+
 ### Hybrid policy schedules
 
 ```python
