@@ -57,7 +57,7 @@ Tasks are listed in delivery order.
 - [TASK-STATE-002](../tasks/TASK-STATE-002.md) - shipped: hybrid allocation
   registry snapshots
 - [TASK-STATE-003](../tasks/TASK-STATE-003.md) - shipped: hybrid arrears snapshots
-- [TASK-STATE-004](../tasks/TASK-STATE-004.md) - ready: hybrid exit snapshots
+- [TASK-STATE-004](../tasks/TASK-STATE-004.md) - shipped: hybrid exit snapshots
 - [TASK-STATE-005](../tasks/TASK-STATE-005.md) - ready: rebuildable ledger
   balance projection
 

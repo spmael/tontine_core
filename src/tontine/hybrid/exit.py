@@ -134,12 +134,8 @@ class HybridExitRegistry:
             audit_registry,
         )
         registry._exits = {item.exit_id: item for item in snapshot.exits}
-        registry._reports = {
-            item.report_id: item for item in snapshot.queue_reports
-        }
-        registry._audit_event_ids = {
-            event.event_id for event in snapshot.audit_events
-        }
+        registry._reports = {item.report_id: item for item in snapshot.queue_reports}
+        registry._audit_event_ids = {event.event_id for event in snapshot.audit_events}
         return registry
 
     def snapshot(self) -> HybridExitSnapshot:
@@ -213,8 +209,7 @@ class HybridExitRegistry:
             remaining = _net_amount(remaining, rotation)
             fund = min(remaining, settlement.unpaid_fund_dues)
             if (
-                sum((item.penalty_amount for item in offsets), Decimal("0"))
-                != penalty
+                sum((item.penalty_amount for item in offsets), Decimal("0")) != penalty
                 or sum((item.rotation_amount for item in offsets), Decimal("0"))
                 != rotation
                 or sum((item.fund_amount for item in offsets), Decimal("0")) != fund
@@ -223,9 +218,7 @@ class HybridExitRegistry:
                     "Exit arrears setoffs do not match the recorded settlement."
                 )
 
-        unit_events = {
-            event.event_id: event for event in unit_ledger.snapshot().events
-        }
+        unit_events = {event.event_id: event for event in unit_ledger.snapshot().events}
         for exit_record in snapshot.exits:
             redemption_id = f"hybrid-exit:{exit_record.exit_id}:redeem"
             event = unit_events.get(redemption_id)

@@ -13,8 +13,8 @@ _Generated from capability and task frontmatter._
 - blocked: 0
 - in_progress: 1
 - partial: 0
-- ready: 2
-- shipped: 78
+- ready: 1
+- shipped: 79
 
 ## Items
 
@@ -101,7 +101,7 @@ _Generated from capability and task frontmatter._
 | task | TASK-STATE-001 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | task | TASK-STATE-002 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | task | TASK-STATE-003 | shipped | 2026-10-18 | 2026-10-18 | domain |
-| task | TASK-STATE-004 | ready | null | null | domain |
+| task | TASK-STATE-004 | shipped | 2026-10-21 | 2026-10-21 | domain |
 | task | TASK-STATE-005 | ready | null | null | domain |
 
 ## Evidence Checks

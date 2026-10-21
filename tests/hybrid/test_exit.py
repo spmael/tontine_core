@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, date, datetime
 from decimal import Decimal
 
@@ -550,7 +551,85 @@ def test_exit_snapshot_restores_pending_exit_and_audit_history() -> None:
     assert restored.exit_for("exit-1").status is ExitStatus.PENDING_VALUATION
 
 
+def test_exit_snapshot_rejects_unsupported_schema_and_proposal_mismatch() -> None:
+    governance, _ = approved_exit()
+    exit_registry, _ = registry()
+    record(exit_registry, governance=governance)
+    snapshot = exit_registry.snapshot()
+
+    with pytest.raises(ValueError, match="Unsupported"):
+        replace(snapshot, schema_version=2)
+
+    mismatched_event = replace(snapshot.audit_events[0], source_event="other-proposal")
+    with pytest.raises(ValueError, match="audit history"):
+        replace(snapshot, audit_events=(mismatched_event,))
+
+
 def test_exit_snapshot_restores_settlement_queue_and_payment_transition() -> None:
+    governance, _ = approved_exit()
+    second_governance, _ = approved_exit(member_id="member-b")
+    allocations = HybridAllocationRegistry()
+    arrears = HybridArrearsRegistry()
+    units = MemberUnitLedger()
+    exit_registry = HybridExitRegistry(allocations, arrears, units)
+    units.issue_units("member-a", Decimal("5"), "seed-units")
+    units.issue_units("member-b", Decimal("5"), "seed-units-member-b")
+    record(exit_registry, governance=governance)
+    exit_registry.record_exit(
+        exit_id="exit-2",
+        proposal_id="exit-decision",
+        governance=second_governance,
+        rules=rules(),
+        payout_due_date=date(2027, 1, 31),
+        requested_at=NOW,
+    )
+    exit_registry.resolve_valuation(
+        "exit-1",
+        valuations=(valuation("v1", EXIT_DATE),),
+        contribution_cycles=(),
+        payouts=(),
+        occurred_at=NOW,
+    )
+    exit_registry.resolve_valuation(
+        "exit-2",
+        valuations=(valuation("v1", EXIT_DATE),),
+        contribution_cycles=(),
+        payouts=(),
+        occurred_at=NOW,
+    )
+    exit_registry.build_queue(
+        "queue-1",
+        currency="XAF",
+        liquidity_cap=Decimal("1000"),
+        created_at=datetime(2027, 1, 31, 12, tzinfo=UTC),
+    )
+    snapshot = exit_registry.snapshot()
+
+    restored = snapshot.restore(
+        allocation_registry=allocations,
+        arrears_registry=arrears,
+        unit_ledger=units,
+    )
+
+    assert restored.snapshot() == snapshot
+    assert restored.queue_reports() == exit_registry.queue_reports()
+    assert [entry.exit_id for entry in restored.queue_reports()[0].entries] == [
+        "exit-1",
+        "exit-2",
+    ]
+    assert [event.event_type for event in restored.audit_events("queue-1")] == [
+        "hybrid_exit_queue_reported"
+    ]
+    paid = restored.record_external_payment(
+        "exit-1",
+        "payment-1",
+        occurred_at=datetime(2027, 1, 31, 12, tzinfo=UTC),
+    )
+    assert paid.status is ExitStatus.PAID_EXTERNALLY
+    assert restored.snapshot().exits[0].external_payment_reference == "payment-1"
+
+
+def test_exit_snapshot_rejects_queue_order_and_allocation_mismatches() -> None:
     governance, _ = approved_exit()
     allocations = HybridAllocationRegistry()
     arrears = HybridArrearsRegistry()
@@ -573,24 +652,44 @@ def test_exit_snapshot_restores_settlement_queue_and_payment_transition() -> Non
     )
     snapshot = exit_registry.snapshot()
 
-    restored = snapshot.restore(
-        allocation_registry=allocations,
-        arrears_registry=arrears,
-        unit_ledger=units,
+    report = snapshot.queue_reports[0]
+    invalid_report = replace(
+        report,
+        entries=(replace(report.entries[0], position=2),),
+    )
+    with pytest.raises(ValueError, match="positions must be contiguous"):
+        replace(snapshot, queue_reports=(invalid_report,))
+
+    with pytest.raises(ValueError, match="allocation exit freezes"):
+        snapshot.restore(
+            allocation_registry=HybridAllocationRegistry(),
+            arrears_registry=arrears,
+            unit_ledger=units,
+        )
+
+
+def test_exit_snapshot_rejects_mismatched_arrears_settlement_reference() -> None:
+    governance, _ = approved_exit()
+    allocations = HybridAllocationRegistry()
+    arrears = HybridArrearsRegistry()
+    units = MemberUnitLedger()
+    exit_registry = HybridExitRegistry(allocations, arrears, units)
+    units.issue_units("member-a", Decimal("5"), "seed-units")
+    record(exit_registry, governance=governance)
+    exit_registry.resolve_valuation(
+        "exit-1",
+        valuations=(valuation("v1", EXIT_DATE),),
+        contribution_cycles=(),
+        payouts=(),
+        occurred_at=NOW,
     )
 
-    assert restored.snapshot() == snapshot
-    assert restored.queue_reports() == exit_registry.queue_reports()
-    assert [event.event_type for event in restored.audit_events("queue-1")] == [
-        "hybrid_exit_queue_reported"
-    ]
-    paid = restored.record_external_payment(
-        "exit-1",
-        "payment-1",
-        occurred_at=datetime(2027, 1, 31, 12, tzinfo=UTC),
-    )
-    assert paid.status is ExitStatus.PAID_EXTERNALLY
-    assert restored.snapshot().exits[0].external_payment_reference == "payment-1"
+    with pytest.raises(ValueError, match="arrears settlement IDs"):
+        exit_registry.snapshot().restore(
+            allocation_registry=allocations,
+            arrears_registry=HybridArrearsRegistry(),
+            unit_ledger=units,
+        )
 
 
 def test_exit_snapshot_restore_requires_matching_unit_redemption_event() -> None:

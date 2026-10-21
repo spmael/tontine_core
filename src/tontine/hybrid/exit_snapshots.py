@@ -58,8 +58,7 @@ class HybridExitSnapshot:
         last_report_entries = {}
         for report in reports:
             if any(
-                entry.position != index
-                for index, entry in enumerate(report.entries, 1)
+                entry.position != index for index, entry in enumerate(report.entries, 1)
             ):
                 raise ValueError("Queue report positions must be contiguous.")
             queued_seen = False
@@ -101,14 +100,17 @@ class HybridExitSnapshot:
             if exit_record.status is ExitStatus.PENDING_VALUATION:
                 if settlement is not None:
                     raise ValueError("Pending valuation exits cannot have settlements.")
-                if any(
-                    reference is not None
-                    for reference in (
-                        exit_record.estate_proof_reference,
-                        exit_record.consignment_reference,
-                        exit_record.external_payment_reference,
+                if (
+                    any(
+                        reference is not None
+                        for reference in (
+                            exit_record.estate_proof_reference,
+                            exit_record.consignment_reference,
+                            exit_record.external_payment_reference,
+                        )
                     )
-                ) or exit_record.queue_position is not None:
+                    or exit_record.queue_position is not None
+                ):
                     raise ValueError("Pending valuation exit contains later state.")
                 continue
             if settlement is None:
@@ -172,8 +174,7 @@ class HybridExitSnapshot:
                     latest is None
                     or latest.position != exit_record.queue_position
                     or (
-                        exit_record.status
-                        in {ExitStatus.QUEUED, ExitStatus.PAYABLE}
+                        exit_record.status in {ExitStatus.QUEUED, ExitStatus.PAYABLE}
                         and latest.status is not exit_record.status
                     )
                     or (
@@ -234,9 +235,7 @@ class HybridExitSnapshot:
                 len(recorded_events) != 1
                 or recorded_events[0].source_event != exit_record.proposal_id
                 or (exit_record.settlement is None and settled_events)
-                or (
-                    exit_record.settlement is not None and len(settled_events) != 1
-                )
+                or (exit_record.settlement is not None and len(settled_events) != 1)
                 or (
                     settled_events
                     and settled_events[0].source_event != exit_record.proposal_id
@@ -246,18 +245,12 @@ class HybridExitSnapshot:
             estate_events = audit_by_exit_type.get(
                 (exit_record.exit_id, "hybrid_exit_estate_proof_recorded"), []
             )
-            if (
-                (
-                    exit_record.estate_proof_reference is None
-                    and estate_events
-                )
-                or (
-                    exit_record.estate_proof_reference is not None
-                    and (
+            if (exit_record.estate_proof_reference is None and estate_events) or (
+                exit_record.estate_proof_reference is not None
+                and (
                     len(estate_events) != 1
                     or estate_events[0].source_event
                     != exit_record.estate_proof_reference
-                    )
                 )
             ):
                 raise ValueError(
@@ -266,36 +259,24 @@ class HybridExitSnapshot:
             consignment_events = audit_by_exit_type.get(
                 (exit_record.exit_id, "hybrid_exit_consigned"), []
             )
-            if (
-                (
-                    exit_record.consignment_reference is None
-                    and consignment_events
-                )
-                or (
-                    exit_record.consignment_reference is not None
-                    and (
+            if (exit_record.consignment_reference is None and consignment_events) or (
+                exit_record.consignment_reference is not None
+                and (
                     len(consignment_events) != 1
                     or consignment_events[0].source_event
                     != exit_record.consignment_reference
-                    )
                 )
             ):
                 raise ValueError("Consignment audit history does not match its record.")
             payment_events = audit_by_exit_type.get(
                 (exit_record.exit_id, "hybrid_exit_external_payment_recorded"), []
             )
-            if (
-                (
-                    exit_record.external_payment_reference is None
-                    and payment_events
-                )
-                or (
-                    exit_record.external_payment_reference is not None
-                    and (
+            if (exit_record.external_payment_reference is None and payment_events) or (
+                exit_record.external_payment_reference is not None
+                and (
                     len(payment_events) != 1
                     or payment_events[0].source_event
                     != exit_record.external_payment_reference
-                    )
                 )
             ):
                 raise ValueError("Payment audit history does not match its record.")

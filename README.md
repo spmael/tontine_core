@@ -110,6 +110,10 @@ restoring the matching unit-ledger snapshot.
 `HybridArrearsRegistry.snapshot()` preserves closed-cycle identities, arrears
 events, and audit provenance; restore it with the matching allocation registry
 and unit ledger.
+`HybridExitRegistry.snapshot()` preserves exit settlements, payout queue reports,
+and audit provenance. Restore it with the matching allocation, arrears, and
+unit-ledger state; restoration validates recorded references without rerunning
+governance approval, valuation, settlement, or payment workflows.
 
 `HybridSettlementHistory.from_registries` snapshots allocation, arrears, and
 exit records alongside contribution cycles, payouts, and the rule schedule.
