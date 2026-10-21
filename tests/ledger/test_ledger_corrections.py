@@ -37,9 +37,14 @@ def test_posted_journal_and_entries_are_immutable() -> None:
 def test_duplicate_journal_ids_are_rejected() -> None:
     repository = LedgerRepository()
     repository.post(journal())
+    original_history = repository.journals()
+    original_balance = repository.balance_for("cash-xaf", "XAF")
 
     with pytest.raises(DuplicateJournalError):
         repository.post(journal())
+
+    assert repository.journals() == original_history
+    assert repository.balance_for("cash-xaf", "XAF") == original_balance
 
 
 def test_reversal_preserves_original_provenance() -> None:

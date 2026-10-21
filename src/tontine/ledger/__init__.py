@@ -79,14 +79,15 @@ class JournalEntry:
 
 
 class InMemoryLedgerRepository:
-    """Store posted journals and derive balances from their entries in memory."""
+    """Store immutable journals and maintain rebuildable balance projections."""
 
     def __init__(self) -> None:
         self._journals: list[JournalEntry] = []
         self._journal_ids: set[str] = set()
+        self._balances: dict[tuple[LedgerAccountId, CurrencyCode], Decimal] = {}
 
     def post(self, journal: JournalEntry) -> None:
-        """Post a balanced journal without maintaining manual balances.
+        """Post a balanced journal and update its derived balance projection.
 
         Args:
             journal: Immutable journal with Decimal entries in one currency.
@@ -100,6 +101,22 @@ class InMemoryLedgerRepository:
             raise DuplicateJournalError(
                 f"Journal {journal.journal_id!r} is already posted."
             )
+        self._validate_journal(journal)
+        updates: dict[tuple[LedgerAccountId, CurrencyCode], Decimal] = {}
+        for entry in journal.entries:
+            key = (entry.account_id, entry.currency)
+            balance = updates.get(key, self._balances.get(key, Decimal("0")))
+            updates[key] = balance + (
+                entry.amount
+                if entry.direction is EntryDirection.DEBIT
+                else -entry.amount
+            )
+        self._journals.append(journal)
+        self._journal_ids.add(journal.journal_id)
+        self._balances.update(updates)
+
+    @staticmethod
+    def _validate_journal(journal: JournalEntry) -> None:
         if not any(
             entry.direction is EntryDirection.DEBIT for entry in journal.entries
         ):
@@ -129,8 +146,35 @@ class InMemoryLedgerRepository:
         )
         if debit_total != credit_total:
             raise ValueError("Journal debit and credit totals must balance.")
-        self._journals.append(journal)
-        self._journal_ids.add(journal.journal_id)
+
+    def journals(self) -> tuple[JournalEntry, ...]:
+        """Return posted journals in immutable posting order."""
+        return tuple(self._journals)
+
+    def rebuild_balance_projection(self) -> None:
+        """Rebuild current balances by validating and replaying posted journals.
+
+        Journal records remain the source of truth; this operation replaces only
+        the derived in-memory account/currency projection.
+        """
+        balances: dict[tuple[LedgerAccountId, CurrencyCode], Decimal] = {}
+        journal_ids: set[str] = set()
+        for journal in self._journals:
+            if journal.journal_id in journal_ids:
+                raise DuplicateJournalError(
+                    f"Journal {journal.journal_id!r} is already posted."
+                )
+            self._validate_journal(journal)
+            journal_ids.add(journal.journal_id)
+            for entry in journal.entries:
+                key = (entry.account_id, entry.currency)
+                balances[key] = balances.get(key, Decimal("0")) + (
+                    entry.amount
+                    if entry.direction is EntryDirection.DEBIT
+                    else -entry.amount
+                )
+        self._balances = balances
+        self._journal_ids = journal_ids
 
     def reverse(
         self,
@@ -223,20 +267,9 @@ class InMemoryLedgerRepository:
             raise MissingRecordError(f"Journal {journal_id!r} was not found.") from exc
 
     def balance_for(self, account_id: str, currency: str) -> Decimal:
-        """Derive an account balance from posted entries in one currency."""
-        expected_currency = CurrencyCode(currency)
-        return sum(
-            (
-                entry.amount
-                if entry.direction is EntryDirection.DEBIT
-                else -entry.amount
-                for journal in self._journals
-                for entry in journal.entries
-                if entry.account_id == account_id
-                and entry.currency == expected_currency
-            ),
-            Decimal("0"),
-        )
+        """Return the derived balance in one currency, with debits positive."""
+        key = (LedgerAccountId(account_id), CurrencyCode(currency))
+        return self._balances.get(key, Decimal("0"))
 
 
 __all__ = [

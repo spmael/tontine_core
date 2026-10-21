@@ -115,6 +115,11 @@ and audit provenance. Restore it with the matching allocation, arrears, and
 unit-ledger state; restoration validates recorded references without rerunning
 governance approval, valuation, settlement, or payment workflows.
 
+The ledger keeps immutable posted journals as its source of truth and maintains
+current account/currency balances as a derived projection. Use
+`InMemoryLedgerRepository.rebuild_balance_projection()` to validate and rebuild
+that projection from `journals()`.
+
 `HybridSettlementHistory.from_registries` snapshots allocation, arrears, and
 exit records alongside contribution cycles, payouts, and the rule schedule.
 `settlement_position(history, member, valuation)` derives current dues, the

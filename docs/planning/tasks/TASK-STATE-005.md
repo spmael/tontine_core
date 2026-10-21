@@ -1,8 +1,8 @@
 ---
 id: TASK-STATE-005
-status: ready
-started: null
-completed: null
+status: shipped
+started: 2026-10-21
+completed: 2026-10-21
 adr_refs:
   - ADR-007
 requirements:
@@ -27,15 +27,15 @@ balance store.
 
 ## Acceptance Criteria
 
-- [ ] Maintain current account/currency balances as a derived projection when
+- [x] Maintain current account/currency balances as a derived projection when
   balanced journals are posted.
-- [ ] Rebuild the projection deterministically from the immutable journal
+- [x] Rebuild the projection deterministically from the immutable journal
   sequence, preserving duplicate and validation behavior.
-- [ ] Keep journal history immutable and expose no operation that directly sets
+- [x] Keep journal history immutable and expose no operation that directly sets
   a cached balance.
-- [ ] Prove projection values equal a full journal-derived calculation after
+- [x] Prove projection values equal a full journal-derived calculation after
   posts, reversals, adjustments, and rebuild.
-- [ ] Cover multiple accounts and currencies plus invalid journal handling.
+- [x] Cover multiple accounts and currencies plus invalid journal handling.
 
 ## Planned Changes
 
@@ -53,4 +53,4 @@ uv run mypy src
 
 ## Completion Notes
 
-Ready. Point-in-time balance queries remain in CAP-LEDGER-002.
+Shipped. Point-in-time balance queries remain in CAP-LEDGER-002.

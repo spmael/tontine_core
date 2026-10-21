@@ -11,10 +11,10 @@ _Generated from capability and task frontmatter._
 
 - backlog: 2
 - blocked: 0
-- in_progress: 1
+- in_progress: 0
 - partial: 0
-- ready: 1
-- shipped: 79
+- ready: 0
+- shipped: 81
 
 ## Items
 
@@ -39,7 +39,7 @@ _Generated from capability and task frontmatter._
 | capability | CAP-MEM-001 | backlog | null | null | domain |
 | capability | CAP-PACKAGE-001 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
 | capability | CAP-REPORT-001 | shipped | 2026-09-12 | 2026-09-12 | reporting |
-| capability | CAP-STATE-001 | in_progress | 2026-10-18 | null | package-boundary |
+| capability | CAP-STATE-001 | shipped | 2026-10-18 | 2026-10-21 | package-boundary |
 | task | TASK-ACCOUNT-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-ACCOUNT-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-ACCOUNT-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
@@ -102,7 +102,7 @@ _Generated from capability and task frontmatter._
 | task | TASK-STATE-002 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | task | TASK-STATE-003 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | task | TASK-STATE-004 | shipped | 2026-10-21 | 2026-10-21 | domain |
-| task | TASK-STATE-005 | ready | null | null | domain |
+| task | TASK-STATE-005 | shipped | 2026-10-21 | 2026-10-21 | domain |
 
 ## Evidence Checks
 

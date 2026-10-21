@@ -1,8 +1,8 @@
 ---
 id: CAP-STATE-001
-status: in_progress
+status: shipped
 started: 2026-10-18
-completed: null
+completed: 2026-10-21
 adr_refs:
   - ADR-004
   - ADR-007
@@ -38,11 +38,11 @@ replay or making cached state a competing source of truth.
 ## Acceptance Criteria
 
 - [x] Define the supported state interchange contract and compatibility rules.
-- [ ] Restore registries without replaying undocumented public mutations.
+- [x] Restore registries without replaying undocumented public mutations.
 - [x] Ensure membership changes do not silently corrupt restored proposal state.
-- [ ] Ensure any derived ledger balance state can be rebuilt from journals.
-- [ ] Avoid rescanning complete journal history for each current balance read.
-- [ ] Keep persistence adapters outside `src/tontine/`.
+- [x] Ensure any derived ledger balance state can be rebuilt from journals.
+- [x] Avoid rescanning complete journal history for each current balance read.
+- [x] Keep persistence adapters outside `src/tontine/`.
 
 ## Implementation Tasks
 
@@ -58,7 +58,7 @@ Tasks are listed in delivery order.
   registry snapshots
 - [TASK-STATE-003](../tasks/TASK-STATE-003.md) - shipped: hybrid arrears snapshots
 - [TASK-STATE-004](../tasks/TASK-STATE-004.md) - shipped: hybrid exit snapshots
-- [TASK-STATE-005](../tasks/TASK-STATE-005.md) - ready: rebuildable ledger
+- [TASK-STATE-005](../tasks/TASK-STATE-005.md) - shipped: rebuildable ledger
   balance projection
 
 Governance snapshots are shipped by TASK-GOV-005. Point-in-time balance reads

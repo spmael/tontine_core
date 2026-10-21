@@ -81,6 +81,102 @@ def test_repository_rejects_mixed_currency_entries() -> None:
         LedgerRepository().post(mixed)
 
 
+def test_projection_tracks_multiple_accounts_and_currencies_and_rebuilds() -> None:
+    repository = LedgerRepository()
+    repository.post(journal())
+    repository.post(
+        JournalEntry(
+            journal_id="journal-usd",
+            recorded_at=datetime(2027, 1, 16, 12, 0, tzinfo=UTC),
+            description="USD contribution",
+            source_event="contribution-usd",
+            entries=(
+                LedgerEntry("cash-usd", "debit", Decimal("25"), "USD"),
+                LedgerEntry("member-capital-usd", "credit", Decimal("25"), "USD"),
+            ),
+        )
+    )
+    repository.reverse(
+        "journal-001-reversal",
+        "journal-001",
+        datetime(2027, 1, 20, 12, 0, tzinfo=UTC),
+    )
+    repository.adjust(
+        "journal-001-adjustment",
+        "journal-001",
+        (
+            LedgerEntry("cash-xaf", "debit", Decimal("100"), "XAF"),
+            LedgerEntry("member-capital", "credit", Decimal("100"), "XAF"),
+        ),
+        datetime(2027, 1, 21, 12, 0, tzinfo=UTC),
+        "Correction",
+    )
+
+    keys = (
+        ("cash-xaf", "XAF"),
+        ("member-capital", "XAF"),
+        ("cash-usd", "USD"),
+        ("member-capital-usd", "USD"),
+        ("cash-usd", "XAF"),
+    )
+    for account_id, currency in keys:
+        expected = sum(
+            (
+                entry.amount
+                if entry.direction is EntryDirection.DEBIT
+                else -entry.amount
+                for posted in repository.journals()
+                for entry in posted.entries
+                if entry.account_id == account_id and entry.currency == currency
+            ),
+            Decimal("0"),
+        )
+        assert repository.balance_for(account_id, currency) == expected
+
+    assert repository.balance_for("cash-xaf", "XAF") == Decimal("100")
+    assert repository.balance_for("cash-usd", "USD") == Decimal("25")
+    repository._balances.clear()
+    repository.rebuild_balance_projection()
+    for account_id, currency in keys:
+        assert repository.balance_for(account_id, currency) == sum(
+            (
+                entry.amount
+                if entry.direction is EntryDirection.DEBIT
+                else -entry.amount
+                for posted in repository.journals()
+                for entry in posted.entries
+                if entry.account_id == account_id and entry.currency == currency
+            ),
+            Decimal("0"),
+        )
+
+
+def test_invalid_post_does_not_change_journal_history_or_projection() -> None:
+    repository = LedgerRepository()
+    repository.post(journal())
+    posted_journals = repository.journals()
+    cash_balance = repository.balance_for("cash-xaf", "XAF")
+    assert isinstance(posted_journals, tuple)
+
+    with pytest.raises(ValueError, match="balance"):
+        repository.post(journal("unbalanced", credit=Decimal("149999")))
+
+    assert repository.journals() == posted_journals
+    assert repository.balance_for("cash-xaf", "XAF") == cash_balance
+
+
+def test_rebuild_rejects_invalid_history_without_replacing_projection() -> None:
+    repository = LedgerRepository()
+    repository.post(journal())
+    original_balance = repository.balance_for("cash-xaf", "XAF")
+    repository._journals.append(journal("invalid", credit=Decimal("149999")))
+
+    with pytest.raises(ValueError, match="balance"):
+        repository.rebuild_balance_projection()
+
+    assert repository.balance_for("cash-xaf", "XAF") == original_balance
+
+
 def test_ledger_entries_and_journals_validate_values() -> None:
     with pytest.raises(TypeError, match="Decimal"):
         LedgerEntry("cash-xaf", "debit", 1, "XAF")
