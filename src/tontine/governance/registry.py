@@ -19,8 +19,12 @@ from tontine.exceptions import MissingRecordError
 
 from ._investment_authorization import _InvestmentAuthorizations
 from ._lifecycle import _ProposalLifecycle
+from ._member_decisions import _MemberDecisions
 from .models import (
     InvestmentAuthorizationEffect,
+    MemberExitEffect,
+    PayoutDeferralEffect,
+    PenaltyWaiverEffect,
     ProposalEffect,
     ProposalStatus,
     RotationExceptionEffect,
@@ -32,7 +36,11 @@ from .models import (
 from .snapshots import GovernanceProposalSnapshot, GovernanceSnapshot
 
 
-class GovernanceRegistry(_ProposalLifecycle, _InvestmentAuthorizations):
+class GovernanceRegistry(
+    _ProposalLifecycle,
+    _InvestmentAuthorizations,
+    _MemberDecisions,
+):
     """Manage governance proposals, votes, effective rotations, and audit events."""
 
     def __init__(
@@ -293,16 +301,33 @@ class GovernanceRegistry(_ProposalLifecycle, _InvestmentAuthorizations):
         voting_deadline: datetime,
         quorum_numerator: int,
         quorum_denominator: int,
+        eligible_member_ids: tuple[str, ...] | None = None,
     ) -> RotationProposal:
         if proposal_id in self._proposals:
             raise ValueError(f"Proposal {proposal_id!r} already exists.")
         if proposer_id not in self._active_members:
             raise ValueError("Proposal proposer must be an eligible member.")
+        electorate = tuple(
+            self._active_members if eligible_member_ids is None else eligible_member_ids
+        )
+        if not electorate:
+            raise ValueError("Proposal electorate cannot be empty after recusal.")
+        if proposer_id not in electorate:
+            raise ValueError(
+                "Proposal proposer must belong to its eligible electorate."
+            )
         require_aware_datetime(created_at, "created_at")
         require_aware_datetime(voting_deadline, "voting_deadline")
-        if current_cycle < 1 or effective_cycle <= current_cycle:
+        immediate_effect = isinstance(
+            effect, (MemberExitEffect, PenaltyWaiverEffect, PayoutDeferralEffect)
+        )
+        if current_cycle < 1 or (
+            effective_cycle < current_cycle
+            if immediate_effect
+            else effective_cycle <= current_cycle
+        ):
             raise ValueError(
-                "Proposal effective cycle must be greater than current cycle."
+                "Proposal effect cycle must be current or strictly future as required."
             )
         proposal = RotationProposal(
             proposal_id=proposal_id,
@@ -314,7 +339,7 @@ class GovernanceRegistry(_ProposalLifecycle, _InvestmentAuthorizations):
             effective_cycle=effective_cycle,
             created_at=created_at,
             voting_deadline=voting_deadline,
-            eligible_member_ids=tuple(self._active_members),
+            eligible_member_ids=electorate,
             current_cycle=current_cycle,
             quorum_numerator=quorum_numerator,
             quorum_denominator=quorum_denominator,
@@ -446,6 +471,10 @@ class GovernanceRegistry(_ProposalLifecycle, _InvestmentAuthorizations):
                 effect.ruleset.version,
                 excluding_proposal_id=proposal.proposal_id,
             )
+        elif isinstance(
+            effect, (MemberExitEffect, PenaltyWaiverEffect, PayoutDeferralEffect)
+        ):
+            self._prevalidate_member_decision(proposal)
 
     def _activate_effect(
         self,
@@ -513,6 +542,10 @@ class GovernanceRegistry(_ProposalLifecycle, _InvestmentAuthorizations):
                     "currency": str(effect.currency),
                 },
             )
+        elif isinstance(
+            effect, (MemberExitEffect, PenaltyWaiverEffect, PayoutDeferralEffect)
+        ):
+            self._activate_member_decision(proposal, occurred_at)
         else:
             raise TypeError(
                 "Proposal effect must be a supported typed decision effect."

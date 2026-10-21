@@ -1,9 +1,11 @@
 ---
 id: CAP-STATE-001
-status: backlog
-started: null
+status: in_progress
+started: 2026-10-18
 completed: null
-adr_refs: []
+adr_refs:
+  - ADR-004
+  - ADR-007
 depends_on:
   - CAP-API-001
   - CAP-LEDGER-001
@@ -11,6 +13,7 @@ blocks: []
 requirements:
   - FR-API-004
   - FR-LDG-006
+  - NFR-PERF-001
 owner: package-boundary
 ---
 
@@ -34,17 +37,32 @@ replay or making cached state a competing source of truth.
 
 ## Acceptance Criteria
 
-- [ ] Define the supported state interchange contract and compatibility rules.
+- [x] Define the supported state interchange contract and compatibility rules.
 - [ ] Restore registries without replaying undocumented public mutations.
-- [ ] Ensure membership changes do not silently corrupt restored proposal state.
+- [x] Ensure membership changes do not silently corrupt restored proposal state.
 - [ ] Ensure any derived ledger balance state can be rebuilt from journals.
+- [ ] Avoid rescanning complete journal history for each current balance read.
 - [ ] Keep persistence adapters outside `src/tontine/`.
 
 ## Implementation Tasks
 
-Task decomposition is intentionally deferred until the architecture choices in
-[`../../architecture/next-version-gap-architecture.md`](../../architecture/next-version-gap-architecture.md)
-are reviewed.
+The state interchange contract is decided in
+[ADR-007](../../architecture/adr/ADR-007-state-interchange-contract.md), with
+governance snapshots and frozen proposal electorates governed by
+[ADR-004](../../architecture/adr/ADR-004-governance-decision-lifecycle.md).
+Tasks are listed in delivery order.
+
+- [TASK-STATE-001](../tasks/TASK-STATE-001.md) - shipped: member-unit event
+  snapshots and deterministic rebuild
+- [TASK-STATE-002](../tasks/TASK-STATE-002.md) - shipped: hybrid allocation
+  registry snapshots
+- [TASK-STATE-003](../tasks/TASK-STATE-003.md) - shipped: hybrid arrears snapshots
+- [TASK-STATE-004](../tasks/TASK-STATE-004.md) - ready: hybrid exit snapshots
+- [TASK-STATE-005](../tasks/TASK-STATE-005.md) - ready: rebuildable ledger
+  balance projection
+
+Governance snapshots are shipped by TASK-GOV-005. Point-in-time balance reads
+remain in CAP-LEDGER-002.
 
 ## Verification
 

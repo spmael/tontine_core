@@ -61,9 +61,9 @@ class LiabilityRegistry:
 class InvestmentValuation:
     """Derive NAV and member values from supplied Decimal valuation inputs.
 
-    Zero units outstanding is the valid state before the first unit issue
-    (ADR-005). NAV is still defined, but per-unit values are ``None`` because
-    no unit price can be derived.
+    Zero units outstanding is the valid state before the first unit issue. NAV
+    is still defined, but per-unit values are ``None`` because no unit price can
+    be derived.
     """
 
     assets: Decimal
@@ -166,12 +166,121 @@ class InvestmentValuation:
         )
 
 
+@dataclass(frozen=True)
+class UnitIssueEvent:
+    """Record an immutable positive or zero unit issuance."""
+
+    event_id: str
+    member_id: str
+    units: Decimal
+
+    def __post_init__(self) -> None:
+        if not self.event_id.strip():
+            raise ValueError("Unit event identifier is required.")
+        if not self.member_id.strip():
+            raise ValueError("Member identifier is required.")
+        object.__setattr__(self, "units", _non_negative(self.units, "Units"))
+
+
+@dataclass(frozen=True)
+class UnitRedemptionEvent:
+    """Record an immutable non-negative unit redemption."""
+
+    event_id: str
+    member_id: str
+    units: Decimal
+
+    def __post_init__(self) -> None:
+        if not self.event_id.strip():
+            raise ValueError("Unit event identifier is required.")
+        if not self.member_id.strip():
+            raise ValueError("Member identifier is required.")
+        object.__setattr__(self, "units", _non_negative(self.units, "Units"))
+
+
+MemberUnitEvent = UnitIssueEvent | UnitRedemptionEvent
+
+
+@dataclass(frozen=True)
+class MemberUnitLedgerSnapshot:
+    """Schema-versioned ordered unit events used to rebuild member balances."""
+
+    events: tuple[MemberUnitEvent, ...]
+    schema_version: int = 1
+
+    def __post_init__(self) -> None:
+        if type(self.schema_version) is not int or self.schema_version != 1:
+            raise ValueError(
+                f"Unsupported member unit snapshot schema: {self.schema_version!r}."
+            )
+        events = tuple(self.events)
+        _rebuild_unit_balances(events)
+        object.__setattr__(self, "events", events)
+
+
+def _rebuild_unit_balances(
+    events: tuple[MemberUnitEvent, ...],
+) -> dict[str, Decimal]:
+    balances: dict[str, Decimal] = {}
+    event_ids: set[str] = set()
+    for event in events:
+        if not isinstance(event, (UnitIssueEvent, UnitRedemptionEvent)):
+            raise TypeError("Unit ledger snapshots require typed unit events.")
+        if event.event_id in event_ids:
+            raise ValueError(f"Unit event {event.event_id!r} is already recorded.")
+        event_ids.add(event.event_id)
+        balance = balances.get(event.member_id, Decimal("0"))
+        if isinstance(event, UnitIssueEvent):
+            balances[event.member_id] = balance + event.units
+        else:
+            if event.units > balance:
+                raise ValueError(
+                    f"Redemption event {event.event_id!r} exceeds the member balance."
+                )
+            balances[event.member_id] = balance - event.units
+    return balances
+
+
 class MemberUnitLedger:
-    """Derive member unit balances from immutable issue and redemption events."""
+    """Derive member unit balances from immutable issue and redemption events.
+
+    Snapshot schema version 1 stores the ordered unit events, not cached
+    balances. No unit rounding is applied by this ledger.
+    """
 
     def __init__(self) -> None:
         self._balances: dict[str, Decimal] = {}
         self._event_ids: set[str] = set()
+        self._events: list[MemberUnitEvent] = []
+
+    @classmethod
+    def from_snapshot(
+        cls,
+        snapshot: MemberUnitLedgerSnapshot,
+    ) -> MemberUnitLedger:
+        """Rebuild a ledger from a validated versioned snapshot.
+
+        Args:
+            snapshot: Ordered unit events in a supported schema.
+
+        Raises:
+            TypeError: If the value is not a member-unit snapshot.
+            ValueError: If the schema or event stream is invalid.
+        """
+        if not isinstance(snapshot, MemberUnitLedgerSnapshot):
+            raise TypeError("A member unit ledger snapshot is required.")
+        validated_snapshot = MemberUnitLedgerSnapshot(
+            events=snapshot.events,
+            schema_version=snapshot.schema_version,
+        )
+        ledger = cls()
+        for event in validated_snapshot.events:
+            ledger._record_event(event)
+        return ledger
+
+    def snapshot(self) -> MemberUnitLedgerSnapshot:
+        """Return an immutable snapshot of the ordered unit-event history."""
+        return MemberUnitLedgerSnapshot(events=tuple(self._events))
 
     def issue(
         self,
@@ -190,15 +299,44 @@ class MemberUnitLedger:
 
         Returns:
             The Decimal quantity issued.
+
+        Raises:
+            ValueError: If the member, event identifier, contribution, or unit
+                price is invalid.
         """
-        self._record_event(event_id)
+        if not member_id.strip():
+            raise ValueError("Member identifier is required.")
         amount = _non_negative(contribution, "Contribution")
         price = _non_negative(unit_price, "Unit price")
         if price == 0:
             raise ValueError("Unit price must be greater than zero.")
         units = amount / price
-        self._balances[member_id] = self._balances.get(member_id, Decimal("0")) + units
+        self._record_event(UnitIssueEvent(event_id, member_id, units))
         return units
+
+    def issue_units(
+        self,
+        member_id: str,
+        units: Decimal | int | str,
+        event_id: str,
+    ) -> None:
+        """Record a positive unit quantity under a unique source event.
+
+        Args:
+            member_id: Member receiving the units.
+            units: Positive Decimal-compatible quantity, already priced and
+                rounded by the allocation calculation.
+            event_id: Unique immutable source-event identifier.
+
+        Raises:
+            ValueError: If identifiers or the unit quantity are invalid.
+        """
+        if not member_id.strip():
+            raise ValueError("Member identifier is required.")
+        quantity = _non_negative(units, "Units")
+        if quantity == 0:
+            raise ValueError("Units must be greater than zero.")
+        self._record_event(UnitIssueEvent(event_id, member_id, quantity))
 
     def redeem(
         self,
@@ -216,11 +354,10 @@ class MemberUnitLedger:
         Raises:
             ValueError: If units are invalid or exceed the member balance.
         """
-        self._record_event(event_id)
+        if not member_id.strip():
+            raise ValueError("Member identifier is required.")
         quantity = _non_negative(units, "Units")
-        if quantity > self.balance_for(member_id):
-            raise ValueError("Units cannot exceed the member balance.")
-        self._balances[member_id] = self.balance_for(member_id) - quantity
+        self._record_event(UnitRedemptionEvent(event_id, member_id, quantity))
 
     def balance_for(self, member_id: str) -> Decimal:
         """Return the member's derived unit balance."""
@@ -244,9 +381,18 @@ class MemberUnitLedger:
             for member_id in self._balances
         }
 
-    def _record_event(self, event_id: str) -> None:
-        if not event_id.strip():
-            raise ValueError("Unit event identifier is required.")
-        if event_id in self._event_ids:
-            raise ValueError(f"Unit event {event_id!r} is already recorded.")
-        self._event_ids.add(event_id)
+    def _record_event(self, event: MemberUnitEvent) -> None:
+        if event.event_id in self._event_ids:
+            raise ValueError(f"Unit event {event.event_id!r} is already recorded.")
+        if isinstance(event, UnitRedemptionEvent):
+            if event.units > self.balance_for(event.member_id):
+                raise ValueError("Units cannot exceed the member balance.")
+            self._balances[event.member_id] = (
+                self.balance_for(event.member_id) - event.units
+            )
+        else:
+            self._balances[event.member_id] = (
+                self.balance_for(event.member_id) + event.units
+            )
+        self._event_ids.add(event.event_id)
+        self._events.append(event)

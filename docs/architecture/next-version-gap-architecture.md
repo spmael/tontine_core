@@ -19,12 +19,16 @@ Implementation task decomposition is intentionally deferred.
 ### Stateful Registries and Ledger Projections
 
 - Stateful registries need one documented, deterministic state interchange
-  contract. A versioned snapshot and a canonical event-replay contract are both
-  viable; the public shape and compatibility policy remain undecided.
-- Governance and ledger state must be rehydratable without undocumented
-  sequences of mutating calls or revalidation against mutable current state.
+  contract. ADR-007 selects typed, immutable, schema-versioned snapshots for
+  stateful non-ledger registries; governance follows ADR-004.
+- Registry snapshots preserve event order and reject unsupported schema
+  versions. Serialization and payload migrations remain adapter responsibilities.
+- Governance and hybrid state must be rehydratable without undocumented
+  sequences of public mutation calls or revalidation against mutable current
+  state.
 - The immutable ledger journal remains the source of truth. Running balances,
-  indexes, and checkpoints are derived projections and must be rebuildable.
+  indexes, and checkpoints are derived projections and must be rebuildable from
+  journals; the core does not persist a competing ledger-balance snapshot.
 - Ledger projection/query APIs, rather than application code, own efficient
   current and point-in-time balance reads.
 - These boundaries are tracked by FR-API-004, FR-LDG-005..006, NFR-PERF-001,
@@ -102,31 +106,26 @@ Implementation task decomposition is intentionally deferred.
 These choices affect public API shape or financial/governance behavior and remain
 open; the capability backlog must not be treated as choosing an answer:
 
-1. Registry state: versioned snapshots, canonical event replay, or both; required
-   schema compatibility and migration behavior.
-2. Proposal eligibility: store an electorate snapshot, store a version/reference
-   to membership state, or explicitly invalidate proposals when membership
-   changes.
-3. Proposal evaluation: quorum definition, abstention treatment, full
-   participation, and whether early evaluation is permitted when all members
-   have voted.
-4. Proposal timing: which boundary supplies the current cycle and time, and how
-   to handle an already-open or already-closed effective cycle.
-5. Investment valuation with zero units: a tagged empty result versus a dedicated
-   constructor/value, and which fields are meaningful in that state. Resolved by
-   ADR-005: optional per-unit values plus a `has_units_outstanding` flag.
-6. Cross-currency investment activity: reject mismatched currency, or accept an
-   explicit conversion record with a defined accounting point. Resolved by
-   ADR-005: accepted only with an explicit `FxRate`; derived amount unrounded.
-7. Shares: whether share identity belongs to membership, a participation
-   aggregate, or a separate domain entity, and how share changes affect existing
-   rotations.
-8. Hybrid rules: split units, whether the rule applies to expected or actually
-   received contribution amounts, late/missed treatment, and exit/settlement
-   behavior. Resolved by ADR-006: split received amounts in basis points,
-   price late and catch-up units at the valuation in force when paid and exits
-   forward, and settle every exit through a governance decision.
-9. Separation of duties: which responsibility combinations conflict and
+1. Proposal evaluation: quorum definition, abstention treatment, full
+    participation, and whether early evaluation is permitted when all members
+    have voted.
+2. Proposal timing: which boundary supplies the current cycle and time, and how
+    to handle an already-open or already-closed effective cycle.
+3. Investment valuation with zero units: a tagged empty result versus a dedicated
+    constructor/value, and which fields are meaningful in that state. Resolved by
+    ADR-005: optional per-unit values plus a `has_units_outstanding` flag.
+4. Cross-currency investment activity: reject mismatched currency, or accept an
+    explicit conversion record with a defined accounting point. Resolved by
+    ADR-005: accepted only with an explicit `FxRate`; derived amount unrounded.
+5. Shares: whether share identity belongs to membership, a participation
+    aggregate, or a separate domain entity, and how share changes affect existing
+    rotations.
+6. Hybrid rules: split units, whether the rule applies to expected or actually
+    received contribution amounts, late/missed treatment, and exit/settlement
+    behavior. Resolved by ADR-006: split received amounts in basis points,
+    price late and catch-up units at the valuation in force when paid and exits
+    forward, and settle every exit through a governance decision.
+7. Separation of duties: which responsibility combinations conflict and
     whether conflicts reject updates or are returned as findings.
 
 ## Delivery Guardrails

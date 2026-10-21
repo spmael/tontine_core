@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import calendar
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
 from types import MappingProxyType
@@ -108,7 +109,7 @@ class InvestmentAuthorizationEffect:
     """Approved purchase or sale of one asset up to a cumulative maximum.
 
     ``max_amount`` is in ``currency`` units, which must be the asset currency.
-    Activities citing the decision may not exceed it in total (ADR-005).
+    Activities citing the decision may not exceed it in total.
     """
 
     asset_id: str
@@ -135,11 +136,89 @@ class InvestmentAuthorizationEffect:
         object.__setattr__(self, "currency", CurrencyCode(str(self.currency)))
 
 
+class MemberExitType(StrEnum):
+    """Supported reasons for ending a member's participation."""
+
+    VOLUNTARY = "voluntary"
+    EXPULSION = "expulsion"
+    DEATH = "death"
+
+
+@dataclass(frozen=True)
+class MemberExitEffect:
+    """Approved exit details and the cycle in which the request was made."""
+
+    member_id: str
+    exit_type: MemberExitType
+    exit_date: date
+    request_cycle: int
+
+    def __post_init__(self) -> None:
+        if not self.member_id.strip():
+            raise ValueError("Member exit requires a member identifier.")
+        object.__setattr__(self, "exit_type", MemberExitType(self.exit_type))
+        if type(self.exit_date) is not date:
+            raise TypeError("Member exit date must be a calendar date.")
+        if type(self.request_cycle) is not int or self.request_cycle < 1:
+            raise ValueError("Member exit request cycle must be positive.")
+
+
+@dataclass(frozen=True)
+class PenaltyWaiverEffect:
+    """Approved waiver of one member's assessed penalty."""
+
+    penalty_assessment_id: str
+    member_id: str
+
+    def __post_init__(self) -> None:
+        if not self.penalty_assessment_id.strip() or not self.member_id.strip():
+            raise ValueError("Penalty waiver requires an assessment and member.")
+
+
+@dataclass(frozen=True)
+class PayoutDeferralEffect:
+    """Approved payout extension linked to one member-exit decision."""
+
+    exit_proposal_id: str
+    reason: str
+    extended_date: date
+
+    def __post_init__(self) -> None:
+        if not self.exit_proposal_id.strip():
+            raise ValueError("Payout deferral requires an exit decision identifier.")
+        if not self.reason.strip():
+            raise ValueError("Payout deferral reason is required.")
+        if type(self.extended_date) is not date:
+            raise TypeError("Payout deferral date must be a calendar date.")
+
+    def validate_exit_date(self, exit_date: date) -> None:
+        """Require an extension beyond 12 months and no later than 24 months."""
+        if (
+            not _add_months(exit_date, 12)
+            < self.extended_date
+            <= _add_months(exit_date, 24)
+        ):
+            raise ValueError(
+                "Payout deferral date must be after 12 months and within "
+                "24 months of the exit."
+            )
+
+
+def _add_months(value: date, months: int) -> date:
+    month_index = value.month - 1 + months
+    year = value.year + month_index // 12
+    month = month_index % 12 + 1
+    return date(year, month, min(value.day, calendar.monthrange(year, month)[1]))
+
+
 ProposalEffect = (
     RotationOrderEffect
     | RotationExceptionEffect
     | RulesetActivationEffect
     | InvestmentAuthorizationEffect
+    | MemberExitEffect
+    | PenaltyWaiverEffect
+    | PayoutDeferralEffect
 )
 
 
@@ -218,10 +297,9 @@ class RotationProposal:
         if self.voting_deadline < self.created_at:
             raise ValueError("Proposal deadline cannot precede creation.")
         if self.effective_cycle < 1 or (
-            self.current_cycle is not None
-            and (self.current_cycle < 1 or self.effective_cycle <= self.current_cycle)
+            self.current_cycle is not None and self.current_cycle < 1
         ):
-            raise ValueError("Proposal effective cycle must be strictly future.")
+            raise ValueError("Proposal effective and current cycles must be positive.")
         if not self.approval_threshold.is_finite() or not Decimal(
             "0"
         ) < self.approval_threshold <= Decimal("100"):
@@ -248,6 +326,17 @@ class RotationProposal:
             self.effect = effect
         if effect is None:
             raise ValueError("Proposal must define a typed decision effect.")
+        immediate_effect = isinstance(
+            effect, (MemberExitEffect, PenaltyWaiverEffect, PayoutDeferralEffect)
+        )
+        if self.current_cycle is not None and (
+            self.effective_cycle < self.current_cycle
+            if immediate_effect
+            else self.effective_cycle <= self.current_cycle
+        ):
+            raise ValueError(
+                "Decision effect cycle must be current or strictly future as required."
+            )
         if isinstance(effect, RotationOrderEffect):
             if (
                 effect.effective_cycle != self.effective_cycle
@@ -269,6 +358,31 @@ class RotationProposal:
             if self.rotation_order:
                 raise ValueError(
                     "Investment authorization effect does not match its context."
+                )
+        elif isinstance(
+            effect, (MemberExitEffect, PenaltyWaiverEffect, PayoutDeferralEffect)
+        ):
+            if self.effective_cycle != self.current_cycle or self.rotation_order:
+                raise ValueError("Member decision effect does not match its context.")
+            if (
+                isinstance(effect, MemberExitEffect)
+                and effect.request_cycle != self.effective_cycle
+            ):
+                raise ValueError(
+                    "Member exit request cycle does not match its context."
+                )
+            recused_member_id = (
+                effect.member_id
+                if isinstance(effect, PenaltyWaiverEffect)
+                or (
+                    isinstance(effect, MemberExitEffect)
+                    and effect.exit_type is MemberExitType.EXPULSION
+                )
+                else None
+            )
+            if recused_member_id in self.eligible_member_ids:
+                raise ValueError(
+                    "Interested member cannot be in the proposal electorate."
                 )
         else:
             raise TypeError(
@@ -300,6 +414,10 @@ __all__ = [
     "ProposalStatus",
     "ProposalTally",
     "InvestmentAuthorizationEffect",
+    "MemberExitEffect",
+    "MemberExitType",
+    "PenaltyWaiverEffect",
+    "PayoutDeferralEffect",
     "RotationExceptionEffect",
     "RotationOrderEffect",
     "RotationProposal",

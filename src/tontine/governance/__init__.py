@@ -4,6 +4,10 @@ from tontine.audit import AuditEvent
 
 from .models import (
     InvestmentAuthorizationEffect,
+    MemberExitEffect,
+    MemberExitType,
+    PayoutDeferralEffect,
+    PenaltyWaiverEffect,
     ProposalEffect,
     ProposalEvaluation,
     ProposalStatus,
@@ -24,6 +28,10 @@ __all__ = [
     "GovernanceProposalSnapshot",
     "GovernanceSnapshot",
     "InvestmentAuthorizationEffect",
+    "MemberExitEffect",
+    "MemberExitType",
+    "PenaltyWaiverEffect",
+    "PayoutDeferralEffect",
     "ProposalEvaluation",
     "ProposalEffect",
     "ProposalStatus",

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
 from tontine.currencies import CurrencyCode
+from tontine.hybrid.settlement import HybridSettlementPosition
 from tontine.investments import InvestmentValuation
 
 
@@ -113,6 +114,100 @@ class InvestmentSummary:
 
 
 @dataclass(frozen=True)
+class HybridSettlementPresentation:
+    """Reporting labels and ranking derived from a domain settlement position."""
+
+    position: HybridSettlementPosition
+    unit_liability_flag: bool
+
+    def __post_init__(self) -> None:
+        if type(self.unit_liability_flag) is not bool:
+            raise TypeError("Unit liability flag must be a boolean.")
+        expected_flag = not self.position.statute_flags.unconditional_redemption_refusal
+        if self.unit_liability_flag is not expected_flag:
+            raise ValueError("Unit liability flag must follow the recorded statute.")
+
+    @classmethod
+    def from_position(
+        cls,
+        position: HybridSettlementPosition,
+    ) -> HybridSettlementPresentation:
+        """Build reporting classification from recorded statute facts."""
+        return cls(
+            position=position,
+            unit_liability_flag=(
+                not position.statute_flags.unconditional_redemption_refusal
+            ),
+        )
+
+    @property
+    def unit_classification(self) -> str:
+        """Return the neutral unit label used by member reporting."""
+        return "member funds: redeemable"
+
+    @property
+    def priority_lines(self) -> tuple[tuple[str, Decimal | None], ...]:
+        """Return the rotation-pot line before the member-unit line."""
+        return (
+            ("rotation pot", self.position.rotation_position),
+            (self.unit_classification, self.position.unit_value),
+        )
+
+    @property
+    def event_lines(
+        self,
+    ) -> tuple[tuple[str, str, str | None, Decimal | None], ...]:
+        """Return pending events, elections, and arrears offsets as report lines."""
+        lines: list[tuple[str, str, str | None, Decimal | None]] = []
+        lines.extend(
+            (
+                "pending allocation",
+                item.allocation_id,
+                item.reason.value,
+                item.fund_amount,
+            )
+            for item in self.position.pending_allocations
+        )
+        lines.extend(
+            (
+                "pending exit",
+                item.exit_id,
+                item.status.value,
+                None if item.settlement is None else item.settlement.net_amount,
+            )
+            for item in self.position.pending_exits
+        )
+        lines.extend(
+            (
+                "catch-up election",
+                item.election_id,
+                item.choice.value,
+                None,
+            )
+            for item in self.position.elections
+        )
+        lines.extend(
+            (
+                "rotation arrears offset",
+                item.offset_id,
+                item.valuation_reference,
+                item.amount,
+            )
+            for item in self.position.rotation_offsets
+        )
+        lines.extend(
+            (
+                "exit arrears offset",
+                item.offset_id,
+                item.exit_id,
+                item.amount,
+            )
+            for item in self.position.exit_offsets
+        )
+        return tuple(lines)
+
+
+@dataclass(frozen=True)
 class MemberStatement:
     """Immutable structured statement for one member."""
 
@@ -123,6 +218,7 @@ class MemberStatement:
     payouts: tuple[PayoutSummary, ...]
     investment: InvestmentSummary
     penalties: Decimal
+    hybrid_position: HybridSettlementPresentation | None = None
 
     @property
     def outstanding_total(self) -> Decimal:
@@ -138,6 +234,7 @@ class MemberStatement:
             Decimal("0"),
         )
 
+
 def build_member_statement(
     member_id: str,
     display_name: str,
@@ -146,6 +243,8 @@ def build_member_statement(
     payouts: Sequence[PayoutSummary],
     investment: InvestmentSummary,
     penalties: Decimal | int | str | None = None,
+    *,
+    hybrid_position: HybridSettlementPosition | None = None,
 ) -> MemberStatement:
     """Build a deterministic member statement from supplied domain records.
 
@@ -158,6 +257,7 @@ def build_member_statement(
         investment: Units, ownership, and attributable value summary.
         penalties: Optional supplied penalty total. When omitted, it is derived
             from contribution summaries.
+        hybrid_position: Optional event-derived hybrid settlement position.
 
     Returns:
         An immutable structured statement; no rendering is performed.
@@ -171,6 +271,11 @@ def build_member_statement(
         raise ValueError(
             "Contribution penalty currencies must match the base currency."
         )
+    if hybrid_position is not None:
+        if hybrid_position.member_id != member_id:
+            raise ValueError("Hybrid settlement member must match the statement.")
+        if hybrid_position.currency != reporting_currency:
+            raise ValueError("Hybrid settlement currency must match the statement.")
     return MemberStatement(
         member_id=member_id,
         display_name=display_name,
@@ -186,6 +291,11 @@ def build_member_statement(
             if penalties is None
             else penalties,
             "Penalties",
+        ),
+        hybrid_position=(
+            None
+            if hybrid_position is None
+            else HybridSettlementPresentation.from_position(hybrid_position)
         ),
     )
 
@@ -286,6 +396,7 @@ def build_group_statement(
 __all__ = [
     "ContributionSummary",
     "GroupStatement",
+    "HybridSettlementPresentation",
     "InvestmentSummary",
     "MemberStatement",
     "PayoutSummary",

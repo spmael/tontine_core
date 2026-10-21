@@ -1,8 +1,8 @@
 ---
 id: TASK-HYB-003
-status: ready
-started: null
-completed: null
+status: shipped
+started: 2026-10-18
+completed: 2026-10-18
 adr_refs:
   - ADR-006
 requirements:
@@ -24,13 +24,13 @@ ADR-006 invariants and pricing. Depends on TASK-HYB-002.
 
 ## Acceptance Criteria
 
-- [ ] Create an allocation only from a recorded contribution; reject a second allocation for the same `contribution_id`.
-- [ ] Store contribution, member, cycle, rule version, payment-order version, valuation reference, unit price, pot, fund, units, and cash residual.
-- [ ] Price at the latest valuation in force on the receipt date; use the launch price while no units are outstanding.
-- [ ] Hold the fund share as pending allocation when no valuation is in force or it exceeds the maximum age, then allocate at the next valuation without backdating.
-- [ ] Round units down to 4 decimal places and keep the residual as fund cash.
-- [ ] Issue member units through `MemberUnitLedger` with the allocation as provenance.
-- [ ] Tests cover duplicates, pending allocation, launch price, stale valuations, rounding, and replay without re-resolution.
+- [x] Create an allocation only from a recorded contribution; reject a second allocation for the same `contribution_id`.
+- [x] Store contribution, member, cycle, rule version, payment-order version, valuation reference, unit price, pot, fund, units, and cash residual.
+- [x] Price at the latest valuation in force on the receipt date; use the launch price while no units are outstanding.
+- [x] Hold the fund share as pending allocation when no valuation is in force or it exceeds the maximum age, then allocate at the next valuation without backdating.
+- [x] Round units down to 4 decimal places and keep the residual as fund cash.
+- [x] Issue member units through `MemberUnitLedger` with the allocation as provenance.
+- [x] Tests cover duplicates, pending allocation, launch price, stale valuations, rounding, and replay without re-resolution.
 
 ## Planned Changes
 
@@ -47,4 +47,9 @@ uv run mypy src
 
 ## Completion Notes
 
-Not started.
+Implemented and verified on 2026-10-18; see
+[completion evidence](../completions/TASK-HYB-003.md). A contribution's stable
+identifier is supplied by the caller, and the cycle/member source key is also
+enforced to prevent allocating that recorded contribution under another ID.
+The launch price is used when the unit ledger has no outstanding units;
+otherwise an absent or stale valuation leaves the fund share pending.

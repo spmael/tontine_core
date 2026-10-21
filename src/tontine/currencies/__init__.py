@@ -42,7 +42,7 @@ def smallest_unit(currency: str) -> Decimal | None:
 
     For example, ``XAF`` returns ``1``, ``EUR`` returns ``0.01``, and ``KWD``
     returns ``0.001``. This describes settlement granularity only; it does not
-    imply that amounts are rounded (ADR-001).
+    imply that amounts are rounded.
 
     Args:
         currency: ISO 4217 alpha-3 currency code.

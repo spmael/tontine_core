@@ -9,6 +9,7 @@ from tontine.audit import AuditEvent
 from tontine.classic import ClassicPayout, ClassicRotation
 from tontine.contributions import ContributionCycle
 from tontine.governance import RotationProposal, Ruleset
+from tontine.hybrid.allocation_models import HybridAllocation, PendingHybridAllocation
 from tontine.investments import InvestmentActivity
 from tontine.ledger import JournalEntry
 from tontine.members import Member
@@ -48,7 +49,6 @@ class InvestmentRepository(Protocol):
 
     def activities(self) -> Sequence[InvestmentActivity]:
         """Return activities in deterministic event order."""
-
 
 
 @runtime_checkable
@@ -112,3 +112,28 @@ class AuditRepository(Protocol):
         aggregate_id: str,
     ) -> Sequence[AuditEvent]:
         """Return audit history for one aggregate."""
+
+
+@runtime_checkable
+class AllocationRepository(Protocol):
+    """Persistence boundary for one hybrid allocation per contribution.
+
+    Records are immutable after insertion except for the explicit transition
+    from a pending allocation to its resolved allocation. Implementations must
+    preserve the allocation and contribution identifiers through that
+    transition, reject a second contribution record, raise
+    ``MissingRecordError`` for absent keys, and list records in deterministic
+    contribution-identifier order.
+    """
+
+    def add(self, allocation: HybridAllocation | PendingHybridAllocation) -> None:
+        """Insert the initial pending or resolved record for a contribution."""
+
+    def resolve_pending(self, allocation: HybridAllocation) -> None:
+        """Replace a matching pending record with its immutable resolution."""
+
+    def get(self, contribution_id: str) -> HybridAllocation | PendingHybridAllocation:
+        """Return the record for a contribution or raise MissingRecordError."""
+
+    def list(self) -> Sequence[HybridAllocation | PendingHybridAllocation]:
+        """Return records in deterministic contribution-identifier order."""

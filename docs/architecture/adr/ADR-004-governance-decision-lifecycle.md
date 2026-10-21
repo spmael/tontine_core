@@ -32,14 +32,18 @@ rules before the reusable decision capability can be implemented.
 - Accept early evaluation only after every eligible member has voted; otherwise
   evaluation waits until the deadline. A vote at the deadline is valid, and a
   vote after it is rejected.
-- Require explicit current-cycle context and require proposal effective cycles
-  to be strictly greater than the current cycle.
+- Require explicit current-cycle context. Cycle-effective rule and rotation
+  changes must apply strictly after the current cycle. Member exits, penalty
+  waivers, and payout deferrals are decisions for the current cycle; exit
+  decisions also retain the cycle in which the request was made.
 - Require callers to supply timezone-aware occurrence times for governance
   mutations; do not use a hidden local-clock fallback.
 - Use typed proposal effects for rotation order changes, one-cycle recipient
-  overrides, and activation of immutable `Ruleset` values. A one-cycle
-  recipient override does not alter the base rotation, payout calculation, or
-  unpaid-contribution eligibility.
+  overrides, activation of immutable `Ruleset` values, member exits, penalty
+  waivers, and reasoned payout deferrals. The member named in an expulsion or
+  their own penalty waiver is excluded from that proposal's frozen electorate.
+  A one-cycle recipient override does not alter the base rotation, payout
+  calculation, or unpaid-contribution eligibility.
 
 ## Alternatives Considered
 

@@ -135,8 +135,8 @@ class InvestmentActivity:
     ``amount`` is the positive payment or fair value in the activity
     ``currency``, recorded gross. ``asset_amount`` is the same
     value in the asset currency: equal to ``amount`` for same-currency activity,
-    or the unquantized conversion through ``fx_rate`` otherwise (ADR-005). Both
-    must be at least one smallest ISO 4217 unit of their currency.
+    or the unquantized conversion through ``fx_rate`` otherwise. Both must be
+    at least one smallest ISO 4217 unit of their currency.
     ``units`` is the strictly positive asset quantity for purchases and sales,
     and must be omitted for income and fees.
     ``recorded_at`` must be timezone-aware; construct it with
@@ -227,7 +227,7 @@ class InvestmentActivityRegistry:
             asset: Asset definition associated with the activity.
             amount: Positive Decimal-compatible amount in ``currency``, recorded
                 gross of tax or rebates, and at least the currency's smallest
-                ISO 4217 unit. Amounts are never rounded (ADR-005).
+                ISO 4217 unit. Amounts are never rounded.
             currency: ISO 4217 activity currency.
             effective_date: Date on which the activity occurred.
             recorded_at: Timezone-aware timestamp, constructed with

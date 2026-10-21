@@ -1,6 +1,6 @@
 ---
 kind: status_dashboard
-period: 2026-10-18
+period: 2026-10-21
 ---
 
 # Package Delivery Status
@@ -9,12 +9,12 @@ _Generated from capability and task frontmatter._
 
 ## Summary
 
-- backlog: 3
+- backlog: 2
 - blocked: 0
-- in_progress: 0
+- in_progress: 1
 - partial: 0
-- ready: 10
-- shipped: 65
+- ready: 2
+- shipped: 78
 
 ## Items
 
@@ -30,7 +30,7 @@ _Generated from capability and task frontmatter._
 | capability | CAP-GOV-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-GOV-002 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | capability | CAP-GROUP-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
-| capability | CAP-HYB-001 | ready | null | null | domain |
+| capability | CAP-HYB-001 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | capability | CAP-INV-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | capability | CAP-INV-002 | shipped | 2026-10-18 | 2026-10-19 | domain |
 | capability | CAP-LEDGER-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
@@ -39,7 +39,7 @@ _Generated from capability and task frontmatter._
 | capability | CAP-MEM-001 | backlog | null | null | domain |
 | capability | CAP-PACKAGE-001 | shipped | 2026-09-12 | 2026-09-12 | package-foundation |
 | capability | CAP-REPORT-001 | shipped | 2026-09-12 | 2026-09-12 | reporting |
-| capability | CAP-STATE-001 | backlog | null | null | package-boundary |
+| capability | CAP-STATE-001 | in_progress | 2026-10-18 | null | package-boundary |
 | task | TASK-ACCOUNT-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-ACCOUNT-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-ACCOUNT-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
@@ -65,18 +65,18 @@ _Generated from capability and task frontmatter._
 | task | TASK-GOV-004 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | task | TASK-GOV-005 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | task | TASK-GOV-006 | shipped | 2026-10-18 | 2026-10-18 | domain |
-| task | TASK-GOV-007 | ready | null | null | domain |
+| task | TASK-GOV-007 | shipped | 2026-10-18 | 2026-10-18 | domain |
 | task | TASK-GROUP-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-GROUP-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-GROUP-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
-| task | TASK-HYB-001 | ready | null | null | domain |
-| task | TASK-HYB-002 | ready | null | null | domain |
-| task | TASK-HYB-003 | ready | null | null | domain |
-| task | TASK-HYB-004 | ready | null | null | domain |
-| task | TASK-HYB-005 | ready | null | null | domain |
-| task | TASK-HYB-006 | ready | null | null | domain |
-| task | TASK-HYB-007 | ready | null | null | domain |
-| task | TASK-HYB-008 | ready | null | null | package-boundary |
+| task | TASK-HYB-001 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-HYB-002 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-HYB-003 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-HYB-004 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-HYB-005 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-HYB-006 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-HYB-007 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-HYB-008 | shipped | 2026-10-18 | 2026-10-18 | package-boundary |
 | task | TASK-INV-001 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-INV-002 | shipped | 2026-09-12 | 2026-09-12 | domain |
 | task | TASK-INV-003 | shipped | 2026-09-12 | 2026-09-12 | domain |
@@ -98,6 +98,11 @@ _Generated from capability and task frontmatter._
 | task | TASK-REPORT-002 | shipped | 2026-09-12 | 2026-09-12 | reporting |
 | task | TASK-REPORT-003 | shipped | 2026-09-12 | 2026-09-12 | reporting |
 | task | TASK-REPORT-004 | shipped | 2026-09-12 | 2026-09-12 | reporting |
+| task | TASK-STATE-001 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-STATE-002 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-STATE-003 | shipped | 2026-10-18 | 2026-10-18 | domain |
+| task | TASK-STATE-004 | ready | null | null | domain |
+| task | TASK-STATE-005 | ready | null | null | domain |
 
 ## Evidence Checks
 

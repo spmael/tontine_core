@@ -15,6 +15,9 @@ from .valuation import (
     Liability,
     LiabilityRegistry,
     MemberUnitLedger,
+    MemberUnitLedgerSnapshot,
+    UnitIssueEvent,
+    UnitRedemptionEvent,
 )
 
 __all__ = [
@@ -34,6 +37,9 @@ __all__ = [
     "LiabilityRegistry",
     "ManualValuation",
     "MemberUnitLedger",
+    "MemberUnitLedgerSnapshot",
     "ScheduledAllocationRule",
+    "UnitIssueEvent",
+    "UnitRedemptionEvent",
     "is_rate_current",
 ]

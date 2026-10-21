@@ -7,6 +7,9 @@ from tontine.classic import ClassicRotationSchedule
 
 from .models import (
     InvestmentAuthorizationEffect,
+    MemberExitEffect,
+    PayoutDeferralEffect,
+    PenaltyWaiverEffect,
     ProposalStatus,
     RotationExceptionEffect,
     RotationOrderEffect,
@@ -145,6 +148,63 @@ def validate_effect_provenance(
             ):
                 raise ValueError(
                     "Approved investment authorization has no approval event."
+                )
+        elif isinstance(effect, MemberExitEffect):
+            if not any(
+                event.event_type == "member_exit_approved"
+                and event.aggregate_id == proposal.proposal_id
+                and event.details.get("member_id") == effect.member_id
+                and event.details.get("exit_type") == effect.exit_type.value
+                and event.details.get("exit_date") == effect.exit_date.isoformat()
+                and event.details.get("request_cycle") == effect.request_cycle
+                for event in governance_events
+            ):
+                raise ValueError("Snapshot member exit has no matching approval event.")
+        elif isinstance(effect, PenaltyWaiverEffect):
+            if not any(
+                event.event_type == "penalty_waiver_approved"
+                and event.aggregate_id == proposal.proposal_id
+                and event.details.get("penalty_assessment_id")
+                == effect.penalty_assessment_id
+                and event.details.get("member_id") == effect.member_id
+                for event in governance_events
+            ):
+                raise ValueError(
+                    "Snapshot penalty waiver has no matching approval event."
+                )
+        elif isinstance(effect, PayoutDeferralEffect):
+            exit_proposal = proposals_by_id.get(effect.exit_proposal_id)
+            exit_approval = next(
+                (
+                    event
+                    for event in governance_events
+                    if event.aggregate_id == effect.exit_proposal_id
+                    and event.event_type == "member_exit_approved"
+                ),
+                None,
+            )
+            if (
+                exit_proposal is None
+                or exit_proposal.status is not ProposalStatus.APPROVED
+                or not isinstance(exit_proposal.effect, MemberExitEffect)
+                or exit_approval is None
+                or exit_approval.occurred_at > proposal.created_at
+            ):
+                raise ValueError(
+                    "Snapshot payout deferral does not reference a prior approved exit."
+                )
+            effect.validate_exit_date(exit_proposal.effect.exit_date)
+            if not any(
+                event.event_type == "payout_deferral_approved"
+                and event.aggregate_id == proposal.proposal_id
+                and event.details.get("exit_proposal_id") == effect.exit_proposal_id
+                and event.details.get("reason") == effect.reason
+                and event.details.get("extended_date")
+                == effect.extended_date.isoformat()
+                for event in governance_events
+            ):
+                raise ValueError(
+                    "Snapshot payout deferral has no matching approval event."
                 )
         else:
             raise ValueError("Snapshot proposal has an unsupported typed effect.")

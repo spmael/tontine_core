@@ -1,8 +1,8 @@
 ---
 id: TASK-HYB-002
-status: ready
-started: null
-completed: null
+status: shipped
+started: 2026-10-18
+completed: 2026-10-18
 adr_refs:
   - ADR-006
 requirements:
@@ -23,11 +23,11 @@ ADR-006: `fund = round_down(received * bps / 10_000)` to the smallest currency u
 
 ## Acceptance Criteria
 
-- [ ] Split the amount received, never the expected amount.
-- [ ] Round the fund share down to the currency's smallest unit; derive the pot as the remainder.
-- [ ] A Hypothesis property test proves pot + fund == received for any basis-point value (`0..10_000`) and any valid XAF or EUR amount, with explicit examples for 0 bps, 10_000 bps, and the smallest currency unit.
-- [ ] Reject negative and non-finite amounts and amounts below the smallest currency unit.
-- [ ] Document units, rounding, and the governing rule in the public docstring.
+- [x] Split the amount received, never the expected amount.
+- [x] Round the fund share down to the currency's smallest unit; derive the pot as the remainder.
+- [x] A Hypothesis property test proves pot + fund == received for any basis-point value (`0..10_000`) and any valid XAF or EUR amount, with explicit examples for 0 bps, 10_000 bps, and the smallest currency unit.
+- [x] Reject negative and non-finite amounts and amounts below the smallest currency unit.
+- [x] Document units, rounding, and the governing rule in the public docstring.
 
 ## Planned Changes
 
@@ -45,4 +45,7 @@ uv run mypy src
 
 ## Completion Notes
 
-Not started.
+Implemented and verified on 2026-10-18; see
+[completion evidence](../completions/TASK-HYB-002.md). Hypothesis is a
+development-only dependency. The split returns `(pot, fund)` amounts and
+performs no posting, allocation, or unit issuance.

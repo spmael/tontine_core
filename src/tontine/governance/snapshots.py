@@ -18,6 +18,9 @@ from tontine.classic import (
 
 from .models import (
     InvestmentAuthorizationEffect,
+    MemberExitEffect,
+    PayoutDeferralEffect,
+    PenaltyWaiverEffect,
     ProposalEffect,
     ProposalEvaluation,
     ProposalStatus,
@@ -96,6 +99,9 @@ class GovernanceProposalSnapshot:
                 RotationExceptionEffect,
                 RulesetActivationEffect,
                 InvestmentAuthorizationEffect,
+                MemberExitEffect,
+                PenaltyWaiverEffect,
+                PayoutDeferralEffect,
             ),
         ):
             raise TypeError("Governance proposal snapshots require a typed effect.")

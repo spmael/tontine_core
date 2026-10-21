@@ -1,8 +1,8 @@
 ---
 id: TASK-HYB-008
-status: ready
-started: null
-completed: null
+status: shipped
+started: 2026-10-18
+completed: 2026-10-18
 adr_refs:
   - ADR-006
 requirements:
@@ -31,23 +31,26 @@ satisfy. Depends on TASK-HYB-003, TASK-HYB-004, TASK-HYB-005, and TASK-HYB-006.
 
 ## Acceptance Criteria
 
-- [ ] Add an `AllocationRepository` protocol keyed by `contribution_id` with
+- [x] Add an `AllocationRepository` protocol keyed by `contribution_id` with
   documented duplicate, missing-record, immutability, and ordering semantics.
-- [ ] Provide a deterministic in-memory implementation that rejects a second
+- [x] Provide a deterministic in-memory implementation that rejects a second
   allocation for the same contribution.
-- [ ] Add shared contract tests that any adapter can run against its own
+- [x] Add shared contract tests that any adapter can run against its own
   implementation, including the duplicate-key case.
-- [ ] Emit canonical audit events for allocation, reversal, catch-up or forfeit
+- [x] Emit canonical audit events for allocation, reversal, catch-up or forfeit
   election, arrears, and exit, with stable event identifiers.
-- [ ] Document for the Kolo adapter the required unique constraint on the
+- [x] Document for the Kolo adapter the required unique constraint on the
   allocation key and how to run the contract tests.
-- [ ] Keep database, framework, and Kolo code outside `src/tontine/`.
+- [x] Keep database, framework, and Kolo code outside `src/tontine/`.
 
 ## Planned Changes
 
 - `src/tontine/repositories/protocols.py`
+- `src/tontine/repositories/__init__.py`
 - `src/tontine/hybrid/`
 - `tests/repositories/test_memory_contracts.py`
+- `tests/repositories/allocation_repository_contract.py`
+- `tests/repositories/test_allocation_repository_contract.py`
 - `tests/hybrid/test_audit.py`
 - `README.md`
 
@@ -61,5 +64,7 @@ uv run mypy src
 
 ## Completion Notes
 
-Not started. The Kolo database migration is delivered in the Kolo adapter
-project against this contract.
+Implemented the allocation persistence contract, deterministic in-memory
+implementation, reusable conformance helper, and hybrid audit event wiring.
+The Kolo database migration remains in the adapter project and must enforce the
+documented unique constraint against `contribution_id`.

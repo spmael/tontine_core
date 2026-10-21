@@ -52,7 +52,7 @@ class FxRate:
         Returns:
             The unquantized amount in the other currency: multiplied by
             ``rate`` from base to quote, divided by ``rate`` from quote to base.
-            No rounding is applied (ADR-001, ADR-003).
+            No rounding is applied.
 
         Raises:
             ValueError: If ``from_currency`` is not part of the pair.

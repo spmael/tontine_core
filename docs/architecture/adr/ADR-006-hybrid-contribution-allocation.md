@@ -22,8 +22,8 @@ valuation, exit fee, penalty order, and catch-up of a missed fund share.
 
 Amended 2026-10-18 after research by an IFRS/SYSCOHADA accountant and an OHADA
 and Cameroonian law researcher on unit classification, repayment deferral,
-heirs, and expulsion. Their findings changed the fee, deferral, and heir rules
-and added the regulatory-perimeter open question.
+heirs, and expulsion. Their findings changed the fee, deferral, and heir rules.
+
 ## Decision
 
 ### Invariants
@@ -141,6 +141,15 @@ against units only through an explicit offset event, never silently.
   penalties, then pot received in excess of the member's contributions. A
   positive net is an entitlement owed to the member. A negative net is reported
   as an amount the member owes and is never hidden.
+- Exit dues are set off against the gross value remaining after the fee, using
+  oldest arrears cycle first and then penalty, rotation-pot, and fund amounts.
+  The offset is an append-only event; any debt above the available value
+  remains unpaid. The order follows the default penalty-first policy and is not
+  independently configurable.
+- Exit settlement uses the existing recorded contribution cycles and classic
+  payout events through the exit date to derive excess pot received; callers do
+  not supply an untraceable total. Monetary settlement lines are rounded to the
+  currency's smallest ISO unit using half-even rounding.
 - The payout is recorded as an entitlement and executed outside the library. By
   default it is deferred to the end of the cycle. A configured liquidity cap
   produces a first-come queue report when the fund cannot pay everyone at once.
@@ -249,23 +258,9 @@ legal advice.
 - Contribution penalties gain a `ROTATION_POT` destination.
 - Legal limits are encoded only where research found a clear rule (cooperative
   expulsion fee, 24-month deferral); other forms rely on bylaws and warnings.
-- The library cannot decide the regulatory perimeter; product launch depends on
-  legal confirmation.
 
 ## Open Questions
 
-- **Regulatory perimeter (blocks the product launch, not the library).**
-  Law 90/053 defines an association by a purpose "other than sharing profits",
-  which a returning investment fund strains, pointing hybrid groups to the
-  cooperative form. COBAC Règlement 01/17 excludes compulsory rotating
-  contributions from savings (art. 30) but voluntary deposits repayable on
-  demand or habitual lending to members would require a licence (penalties
-  under art. 105). COSUMAF approval may be needed for a pooled investment
-  vehicle; this rests only on commentary on the Medic'Fund case. A Cameroonian
-  lawyer must confirm the perimeter. Until then, Kolo should limit the hybrid
-  feature to compulsory contributions with no member loans, or require
-  cooperative status. The library already excludes lending and voluntary
-  deposits.
 - Final presentation of units, confirmed by an ONECCA chartered accountant.
 - Admission of heirs to a seat in cooperatives with a board; the researcher
   found the rule only for the simplified cooperative (AUSCOOP art. 221).
@@ -276,8 +271,7 @@ legal advice.
 
 Named by the researchers: IAS 32 and IFRIC 2 (IFRS Foundation), SYCEBNL and
 AUDCIF (ohada.com, ohada.org), AUSCOOP (FAO Faolex), Law 90/053 (bvm-ac.org),
-Règlement 01/17/CEMAC/UMAC/COBAC (sgg.cg), and Ohadata J-12-250 on the
-*jugement d'hérédité*.
+and Ohadata J-12-250 on the *jugement d'hérédité*.
 
 ## Verification
 

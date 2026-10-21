@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
@@ -69,6 +70,7 @@ class PenaltyDestination(StrEnum):
     SOCIAL_FUND = "social_fund"
     COMPENSATE_AFFECTED_MEMBER = "compensate_affected_member"
     ADMINISTRATION_FUND = "administration_fund"
+    ROTATION_POT = "rotation_pot"
 
 
 def _decimal_amount(
@@ -195,6 +197,16 @@ class Penalty:
         object.__setattr__(self, "amount", _decimal_amount(self.amount, "Penalty"))
         object.__setattr__(self, "currency", CurrencyCode(str(self.currency)))
         require_aware_datetime(self.assessed_on, "assessed_on")
+
+    @property
+    def assessment_id(self) -> str:
+        """Return a stable identifier for this member's cycle penalty assessment."""
+        identity = json.dumps(
+            [self.cycle_id, self.member_id, self.reason.value],
+            ensure_ascii=True,
+            separators=(",", ":"),
+        )
+        return f"penalty:{identity}"
 
 
 @dataclass(frozen=True)

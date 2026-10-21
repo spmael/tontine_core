@@ -47,6 +47,11 @@ large application object:
   duplicate-payout protection, and configurable unpaid-contribution policy.
 - **Investment tracking:** allocation schedules, asset definitions, manual
   valuations, purchases, sales, income, fees, and supplied FX-rate records.
+- **Hybrid rules:** immutable effective-cycle policies for pot/fund shares,
+  partial-payment order, catch-up, exit fees, and payout deferral, plus pure
+  received-contribution splitting, recorded allocations, pending valuations,
+  once-only unit issuance, linked allocation reversals, arrears and catch-up,
+  approved member exits, and pure combined settlement positions.
 - **Ownership and liabilities:** Decimal member-unit issuance and redemption,
   ownership percentages, member values, and manually supplied liability
   records aggregated by currency.
@@ -56,6 +61,101 @@ large application object:
   decisions, approval thresholds, and effective rotations.
 - **Reporting and repositories:** structured member/group statements and typed
   in-memory repository implementations suitable for application adapters.
+
+### Hybrid policy schedules
+
+```python
+from decimal import Decimal
+
+from tontine.hybrid import (
+    HybridRule,
+    HybridRuleSchedule,
+    HybridRuleVersion,
+    split_contribution,
+)
+
+rule = HybridRule(
+    currency="XAF",
+    fund_share_bps=3000,
+    launch_unit_price=Decimal("1000"),
+    max_valuation_age_days=30,
+)
+schedule = HybridRuleSchedule(
+    group_id="community-1",
+    versions=(HybridRuleVersion(1, effective_cycle=1, adopted_cycle=0, rule=rule),),
+)
+assert schedule.version_for_cycle(1).rule.fund_share_bps == 3000
+pot, fund = split_contribution(Decimal("12345"), "XAF", 3000)
+assert (pot, fund) == (Decimal("8642"), Decimal("3703"))
+```
+
+Use `schedule.with_version(version, current_cycle=...)` to add a future version
+without mutating history. Cycle zero means setup. Fee changes require a complete
+intervening cycle of notice: a fee adopted in cycle 2 can first apply in cycle 4.
+Constructing a schedule restores recorded versions; it does not establish the
+current cycle or validate governance approval. Prices are exact `Decimal` values
+in currency units per investment unit, and fees are percentages of gross unit
+value. Rule policies do not move funds. `split_contribution`
+splits the amount actually received into `(pot, fund)`; the fund share rounds
+down to the currency's smallest unit and the pot receives the exact remainder.
+`HybridAllocationRegistry` records allocation inputs and outcomes, retains
+fund shares pending a usable valuation when units are already outstanding, and
+issues rounded units through `MemberUnitLedger` using the allocation identifier
+as the unit event reference.
+
+`HybridAllocationRegistry.snapshot()` captures resolved and pending records,
+rule provenance, reversals, exit freezes, and its audit events. Restore it with
+`HybridAllocationRegistry.from_snapshot(snapshot, unit_ledger=...)` after
+restoring the matching unit-ledger snapshot.
+`HybridArrearsRegistry.snapshot()` preserves closed-cycle identities, arrears
+events, and audit provenance; restore it with the matching allocation registry
+and unit ledger.
+
+`HybridSettlementHistory.from_registries` snapshots allocation, arrears, and
+exit records alongside contribution cycles, payouts, and the rule schedule.
+`settlement_position(history, member, valuation)` derives current dues, the
+rotation-pot amount paid in versus payouts received, member units and their
+value, and explicit pending allocations, pending exits, elections, and offsets.
+The member-statement presentation orders the rotation pot ahead of "member
+funds: redeemable" and derives the unit liability flag from statute facts. The
+domain position keeps the facts and calculated amounts, not the classification.
+Pass the resulting position to
+`build_member_statement(..., hybrid_position=position)` to include it in a
+structured member report. The calculation stores no balances and initiates no
+payments.
+
+### Hybrid allocation persistence and audit
+
+Persistence adapters can implement `tontine.repositories.AllocationRepository`.
+The contract stores one immutable pending or resolved allocation per
+`contribution_id`; a pending record may transition once to a resolved record
+only when allocation and contribution identifiers and all receipt, rule, and
+split provenance remain unchanged. Missing keys raise `MissingRecordError`,
+duplicate contribution keys raise `ValueError`, and listings are sorted by
+contribution identifier. The in-memory implementation is
+`InMemoryAllocationRepository`.
+
+Adapters must enforce a unique constraint on `contribution_id` in persistent
+storage, including transactions racing to record the same receipt. The shared
+contract checks are in
+[`tests/repositories/allocation_repository_contract.py`](./tests/repositories/allocation_repository_contract.py);
+adapter tests can call `assert_allocation_repository_contract` with a factory
+for their repository implementation. For example, import the helper from the
+core checkout's `tests/repositories` directory in an adapter test and call
+`assert_allocation_repository_contract(KoloAllocationRepository)`. Run that
+adapter test with `uv run pytest tests/repositories/test_kolo_allocation_repository.py`;
+run the core implementation's contract test with
+`uv run pytest tests/repositories/test_allocation_repository_contract.py`.
+The Kolo adapter migration and database-specific uniqueness constraint remain
+in that adapter project; no database or Kolo code belongs in this package.
+
+Pass the same `AuditEventRegistry` to the allocation, arrears, and exit
+registries when a consumer needs one combined in-memory audit stream. Allocation,
+pending-resolution, reversal, arrears, election/forfeiture, and exit records
+emit stable, append-only audit event identifiers. Since allocation records keep
+calendar dates rather than timestamps, their audit timestamps are normalized
+to midnight UTC on the relevant effective date; reversals and other timestamped
+events retain their recorded timestamps.
 
 ## Quick Start
 
@@ -156,7 +256,15 @@ units = MemberUnitLedger()
 member_units = units.issue("member-001", Decimal("3000"), valuation.unit_price, "issue-001")
 ownership = valuation.member_ownership_percentage(member_units)
 value = valuation.member_value(member_units)
+
+# Persist snapshots at the adapter boundary; they contain events, not balances.
+unit_snapshot = units.snapshot()
+restored_units = MemberUnitLedger.from_snapshot(unit_snapshot)
 ```
+
+The schema-v1 unit snapshot preserves ordered issue and redemption events rather
+than cached balances. ADR-007 defines this event history as the unit state used
+when restoring hybrid registries.
 
 The valuation derives `NAV = assets - liabilities`, unit price, ownership
 percentage, and member value from explicit Decimal inputs. Before the first

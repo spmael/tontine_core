@@ -54,6 +54,8 @@ The implementation currently provides the following domain capabilities:
 - double-entry ledger entries and balanced journal posting;
 - immutable ledger records with reversal and adjustment support;
 - investment allocation rules and effective-cycle schedules;
+- immutable hybrid contribution policies and effective-cycle schedules;
+- pure hybrid contribution split calculations using recorded amounts received;
 - investment asset definitions and manual valuations;
 - investment activity records for purchases, sales, income, and fees;
 - member unit issuance, redemption, and balance derivation;
@@ -83,6 +85,7 @@ Capability-specific public classes are exposed from their respective modules:
 - `tontine.accounts`;
 - `tontine.ledger`;
 - `tontine.investments`;
+- `tontine.hybrid`;
 - `tontine.governance`;
 - `tontine.audit`;
 - `tontine.reporting`; and
@@ -249,14 +252,17 @@ Ruleset activation does not attach ruleset identifiers to historical financial
 events.
 
 Proposals freeze their eligible electorate at creation and require explicit
-current-cycle context; the effective cycle must be later than the current cycle.
+current-cycle context. Cycle-effective rule and rotation changes apply only
+after the current cycle; member exits, penalty waivers, and payout deferrals are
+decisions for the current cycle. An exit decision records its request cycle.
 Approval uses yes votes divided by the frozen electorate and a two-thirds quorum
 rounded up to a whole voter. Yes, no, and abstain votes count toward quorum;
 abstentions do not count as yes votes. A zero quorum remains available for
 threshold-only policy. A vote at the deadline is accepted and later votes are
 rejected. Early evaluation is permitted only after all eligible members have
 voted; otherwise evaluation waits until the deadline. Proposal effects are
-applied only on approval.
+applied only on approval. An expulsion subject and the member whose penalty is
+being waived are excluded from the respective frozen electorate.
 
 Governance mutations require caller-supplied timezone-aware occurrence times.
 The registry supports immutable schema-versioned snapshots and deterministic
@@ -274,6 +280,11 @@ occurrence times. Event details are preserved as read-only mappings.
 Member statements expose structured contribution history, payouts, investment
 summaries, penalties, and outstanding contribution totals. Penalties may be
 derived from contribution summaries and remain separate from contributions.
+Hybrid statements may also include a pure settlement position derived from
+recorded contribution cycles, allocations, arrears, payouts, and exits. The
+rotation-pot position is presented before member units, which are labelled
+"member funds: redeemable" and shown as a liability unless the recorded statutes
+give the group an unconditional right to refuse redemption.
 
 Group statements expose active members, current cycle, expected and received
 contributions, cash, investment value, liabilities, historical payouts, pending
@@ -281,6 +292,56 @@ proposals, penalties, outstanding contributions, and NAV.
 
 Reporting objects do not render PDF, Excel, HTML, or web pages. Presentation is
 the responsibility of the consuming application.
+
+### 5.9 Hybrid rule policies
+
+Hybrid rule schedules belong to an explicit group identifier. Their immutable
+versions record fund-share basis points, partial-payment orders, catch-up
+settings, exit-fee percentages, launch price and currency, maximum valuation age,
+declared legal form, statute flags, and payout-deferral settings.
+
+The latest effective cycle applies, with the highest version breaking a tie.
+Adding a version requires a caller-supplied current cycle and rejects retroactive
+activation. Cycle zero represents setup. A changed fee requires a complete
+intervening cycle between adoption and activation. Each version can record a
+governance decision reference, without interpreting approval.
+
+The pure contribution split uses the amount received: it rounds the fund share
+down to the currency's smallest ISO 4217 unit and assigns the exact remainder
+to the rotation pot. Expected amounts are used only to measure arrears and are
+not posted. Recorded contributions can be allocated once. The first allocation
+uses the launch unit price while no units are outstanding; otherwise allocation
+uses the latest fresh valuation on or before the pricing date. Without such a
+valuation, the fund share remains pending until it can be priced without
+backdating. Issued units round down to four decimal places, and the residual
+remains as fund cash. An allocation reversal is a linked append-only event that
+offsets the original pot, fund, units, and residual at the stored unit price;
+the original allocation is never changed.
+
+Cycle closure records unpaid rotation, fund, and penalty amounts as arrears.
+Recorded receipts are applied in the effective penalty and contribution order;
+the rule version and each amount are preserved. A missed contribution issues no
+units. Catch-up is governed by an explicit member election before the group's
+deadline, is priced at the receipt-date valuation, and remains pending if no
+usable valuation exists. The deadline default forfeits only the unpaid fund
+share; rotation arrears remain due. Penalty waivers require an approved
+governance decision. Redemption is blocked while rotation arrears remain, and
+unit offsets require an explicit valuation and event. These records do not
+initiate payment or transfer funds. Approved exits freeze new allocations and
+produce forward-priced entitlements, explicit arrears offsets, and payout
+statuses without executing payments. A pure settlement projection combines
+recorded dues, pot contributions and payouts, unit balances and values, pending
+allocations and exits, elections, and offsets for member reporting.
+
+Fees use one schedule for all units, with death fixed at zero. Cooperative
+expulsion fees cannot exceed voluntary-exit fees; other declared forms receive
+an explicit warning. Default payout settings cannot authorize more than 12
+months; a later exit-specific, reasoned governance extension is bounded by the
+24-month ceiling. Governance supports typed exit, waiver, and payout-deferral
+decisions. Hybrid arrears processing, member exit entitlements, and combined
+settlement reporting are implemented; the report derives unit liability
+presentation from recorded statute flags and keeps the rotation pot ahead of
+member units.
 
 ## 6. Persistence and Integration Boundary
 
