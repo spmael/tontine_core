@@ -1,6 +1,8 @@
 ---
 id: TASK-CLASSIC-004
-status: backlog
+status: shipped
+started: 2026-10-18
+completed: 2026-10-18
 requirements:
   - FR-CLS-001
   - FR-CLS-002
@@ -15,13 +17,22 @@ owner: domain
 Allow a classic tontine to generate its recipient order once using a reproducible,
 auditable randomization process.
 
+## Context
+
+Randomization is an explicit, seeded construction step. Recipient selection
+uses the resulting immutable order and never consumes randomness. The
+randomization record travels with the rotation so persistence adapters can
+retain its seed and provenance.
+
 ## Acceptance Criteria
 
-- [ ] Generate a rotation from a supplied active-member set and explicit seed.
-- [ ] Persist the seed, algorithm/version, input member set, generated order, actor, and timestamp.
-- [ ] Never randomize again during recipient lookup.
-- [ ] Reconstruct the same order from recorded randomization provenance.
-- [ ] Add tests for reproducibility and historical reconstruction.
+- [x] Generate a rotation from a supplied active-member set and explicit seed.
+- [x] Retain the seed, algorithm/version, input member set, generated order,
+  actor, and timestamp in immutable provenance attached to the rotation, ready
+  for persistence by an adapter.
+- [x] Never randomize again during recipient lookup.
+- [x] Reconstruct the same order from recorded randomization provenance.
+- [x] Add tests for reproducibility and historical reconstruction.
 
 ## Planned Changes
 
@@ -31,9 +42,13 @@ auditable randomization process.
 ## Validation
 
 ```text
-uv run pytest tests/classic/test_random_rotation.py
+uv run pytest tests/classic
+uv run ruff check src/tontine/classic tests/classic
+uv run mypy src/tontine/classic/__init__.py
 ```
 
 ## Completion Notes
 
-Backlog item. The current V1 implementation remains administrator-defined and deterministic.
+Randomization is explicit and seeded; recipient lookups use the stored immutable
+order. The provenance is exposed on the rotation for persistence adapters; this
+framework-independent core does not add durable storage.

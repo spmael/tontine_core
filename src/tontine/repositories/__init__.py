@@ -9,10 +9,13 @@ from tontine.accounts import FinancialAccount
 from tontine.audit import AuditEvent
 from tontine.classic import ClassicPayout, ClassicRotation
 from tontine.contributions import ContributionCycle
+from tontine.exceptions import MissingRecordError
 from tontine.governance import RotationProposal, Ruleset
 from tontine.groups import Group
+from tontine.hybrid.allocation_models import HybridAllocation, PendingHybridAllocation
 from tontine.members import Member
 from tontine.repositories.protocols import (
+    AllocationRepository,
     AuditRepository,
     ClassicRepository,
     CycleRepository,
@@ -30,7 +33,7 @@ class GroupRepository(Protocol):
         """Add a group or raise for a duplicate identifier."""
 
     def get(self, group_id: str) -> Group:
-        """Return a group or raise KeyError when missing."""
+        """Return a group or raise MissingRecordError when missing."""
 
     def list(self) -> Sequence[Group]:
         """Return groups in deterministic identifier order."""
@@ -44,7 +47,7 @@ class AccountRepository(Protocol):
         """Add an account or raise for a duplicate identifier."""
 
     def get(self, account_id: str) -> FinancialAccount:
-        """Return an account or raise KeyError when missing."""
+        """Return an account or raise MissingRecordError when missing."""
 
     def list(self) -> Sequence[FinancialAccount]:
         """Return accounts in deterministic identifier order."""
@@ -63,11 +66,11 @@ class InMemoryGroupRepository:
         self._groups[group.group_id] = group
 
     def get(self, group_id: str) -> Group:
-        """Return a group or raise KeyError when missing."""
+        """Return a group or raise MissingRecordError when missing."""
         try:
             return self._groups[group_id]
         except KeyError as exc:
-            raise KeyError(f"Group {group_id!r} was not found.") from exc
+            raise MissingRecordError(f"Group {group_id!r} was not found.") from exc
 
     def list(self) -> tuple[Group, ...]:
         """Return groups sorted by stable identifier."""
@@ -87,11 +90,11 @@ class InMemoryAccountRepository:
         self._accounts[account.account_id] = account
 
     def get(self, account_id: str) -> FinancialAccount:
-        """Return an account or raise KeyError when missing."""
+        """Return an account or raise MissingRecordError when missing."""
         try:
             return self._accounts[account_id]
         except KeyError as exc:
-            raise KeyError(f"Account {account_id!r} was not found.") from exc
+            raise MissingRecordError(f"Account {account_id!r} was not found.") from exc
 
     def list(self) -> tuple[FinancialAccount, ...]:
         """Return accounts sorted by stable identifier."""
@@ -111,11 +114,11 @@ class InMemoryCycleRepository:
         self._cycles[cycle.cycle_id] = cycle
 
     def get(self, cycle_id: str) -> ContributionCycle:
-        """Return a cycle or raise KeyError when missing."""
+        """Return a cycle or raise MissingRecordError when missing."""
         try:
             return self._cycles[cycle_id]
         except KeyError as exc:
-            raise KeyError(f"Cycle {cycle_id!r} was not found.") from exc
+            raise MissingRecordError(f"Cycle {cycle_id!r} was not found.") from exc
 
     def list(self) -> tuple[ContributionCycle, ...]:
         """Return cycles sorted by stable identifier."""
@@ -135,11 +138,11 @@ class InMemoryMemberRepository:
         self._members[member.member_id] = member
 
     def get(self, member_id: str) -> Member:
-        """Return a member or raise KeyError when missing."""
+        """Return a member or raise MissingRecordError when missing."""
         try:
             return self._members[member_id]
         except KeyError as exc:
-            raise KeyError(f"Member {member_id!r} was not found.") from exc
+            raise MissingRecordError(f"Member {member_id!r} was not found.") from exc
 
     def list(self) -> tuple[Member, ...]:
         """Return members sorted by stable identifier."""
@@ -160,11 +163,13 @@ class InMemoryClassicRepository:
         self._rotations[rotation_id] = rotation
 
     def get_rotation(self, rotation_id: str) -> ClassicRotation:
-        """Return a rotation or raise KeyError when missing."""
+        """Return a rotation or raise MissingRecordError when missing."""
         try:
             return self._rotations[rotation_id]
         except KeyError as exc:
-            raise KeyError(f"Rotation {rotation_id!r} was not found.") from exc
+            raise MissingRecordError(
+                f"Rotation {rotation_id!r} was not found."
+            ) from exc
 
     def record_payout(self, payout: ClassicPayout) -> None:
         """Record a payout and reject duplicate cycle numbers."""
@@ -191,11 +196,13 @@ class InMemoryGovernanceRepository:
         self._proposals[proposal.proposal_id] = proposal
 
     def get_proposal(self, proposal_id: str) -> RotationProposal:
-        """Return a proposal or raise KeyError when missing."""
+        """Return a proposal or raise MissingRecordError when missing."""
         try:
             return self._proposals[proposal_id]
         except KeyError as exc:
-            raise KeyError(f"Proposal {proposal_id!r} was not found.") from exc
+            raise MissingRecordError(
+                f"Proposal {proposal_id!r} was not found."
+            ) from exc
 
     def save_ruleset(self, ruleset: Ruleset) -> None:
         """Save a ruleset and reject duplicate versions."""
@@ -236,7 +243,81 @@ class InMemoryAuditRepository:
         )
 
 
+class InMemoryAllocationRepository:
+    """Deterministic in-memory storage for immutable hybrid allocations."""
+
+    def __init__(self) -> None:
+        self._allocations: dict[str, HybridAllocation | PendingHybridAllocation] = {}
+        self._allocation_ids: set[str] = set()
+
+    def add(self, allocation: HybridAllocation | PendingHybridAllocation) -> None:
+        """Insert one record per contribution and reject duplicate keys."""
+        contribution_id = allocation.contribution_id
+        if contribution_id in self._allocations:
+            raise ValueError(
+                f"Contribution {contribution_id!r} already has an allocation."
+            )
+        if allocation.allocation_id in self._allocation_ids:
+            raise ValueError(
+                f"Allocation {allocation.allocation_id!r} is already stored."
+            )
+        self._allocations[contribution_id] = allocation
+        self._allocation_ids.add(allocation.allocation_id)
+
+    def resolve_pending(self, allocation: HybridAllocation) -> None:
+        """Replace a pending record with a resolution of the same event."""
+        try:
+            current = self._allocations[allocation.contribution_id]
+        except KeyError as exc:
+            raise MissingRecordError(
+                f"No allocation exists for {allocation.contribution_id!r}."
+            ) from exc
+        if not isinstance(current, PendingHybridAllocation):
+            raise ValueError(
+                f"Contribution {allocation.contribution_id!r} is already resolved."
+            )
+        if not self._matches_pending(current, allocation):
+            raise ValueError("Resolved allocation must preserve pending provenance.")
+        self._allocations[allocation.contribution_id] = allocation
+
+    def get(self, contribution_id: str) -> HybridAllocation | PendingHybridAllocation:
+        """Return a contribution allocation or raise MissingRecordError."""
+        try:
+            return self._allocations[contribution_id]
+        except KeyError as exc:
+            raise MissingRecordError(
+                f"No allocation exists for contribution {contribution_id!r}."
+            ) from exc
+
+    def list(self) -> tuple[HybridAllocation | PendingHybridAllocation, ...]:
+        """Return allocations sorted by contribution identifier."""
+        return tuple(self._allocations[key] for key in sorted(self._allocations))
+
+    @staticmethod
+    def _matches_pending(
+        pending: PendingHybridAllocation,
+        allocation: HybridAllocation,
+    ) -> bool:
+        return (
+            pending.allocation_id == allocation.allocation_id
+            and pending.contribution_id == allocation.contribution_id
+            and pending.member_id == allocation.member_id
+            and pending.cycle_id == allocation.cycle_id
+            and pending.cycle_number == allocation.cycle_number
+            and pending.rule_version == allocation.rule_version
+            and pending.payment_order_version == allocation.payment_order_version
+            and pending.received_amount == allocation.received_amount
+            and pending.currency == allocation.currency
+            and pending.receipt_date == allocation.receipt_date
+            and pending.pot_amount == allocation.pot_amount
+            and pending.fund_amount == allocation.fund_amount
+            and pending.allocation_type == allocation.allocation_type
+            and pending.source_arrears_id == allocation.source_arrears_id
+        )
+
+
 __all__ = [
+    "AllocationRepository",
     "AccountRepository",
     "AuditRepository",
     "ClassicRepository",
@@ -244,6 +325,7 @@ __all__ = [
     "GovernanceRepository",
     "GroupRepository",
     "InMemoryAccountRepository",
+    "InMemoryAllocationRepository",
     "InMemoryCycleRepository",
     "InMemoryGroupRepository",
     "InMemoryMemberRepository",

@@ -47,6 +47,14 @@ def test_investment_summary_derives_ownership_and_value_from_valuation() -> None
     assert summary.attributable_value == Decimal("180")
 
 
+def test_investment_summary_reports_zero_before_units_are_issued() -> None:
+    valuation = InvestmentValuation(Decimal("500"), Decimal("0"), Decimal("0"))
+    summary = InvestmentSummary.from_valuation(valuation, Decimal("0"), "EUR")
+
+    assert summary.ownership_percentage == Decimal("0")
+    assert summary.attributable_value == Decimal("0")
+
+
 def test_member_statement_preserves_fractional_currency_and_penalties() -> None:
     statement = build_member_statement(
         member_id="member-x",

@@ -9,6 +9,7 @@ from tontine.currencies import CurrencyCode
 from tontine.exceptions import (
     DuplicateGroupError,
     DuplicateMemberError,
+    MissingRecordError,
 )
 
 from ..members import Member
@@ -125,12 +126,12 @@ class GroupRepository:
         """Fetch a group by its identifier.
 
         Raises:
-            KeyError: If no group has the requested identifier.
+            MissingRecordError: If no group has the requested identifier.
         """
         try:
             return self._groups[group_id]
         except KeyError as exc:
-            raise KeyError(f"Group {group_id!r} was not found.") from exc
+            raise MissingRecordError(f"Group {group_id!r} was not found.") from exc
 
     def add_member(self, group_id: str, member: Member) -> None:
         """Add a member to a registered group using the group identifier."""
@@ -138,12 +139,16 @@ class GroupRepository:
         group.add_member(member)
 
     def get_member(self, group_id: str, member_id: str) -> Member:
-        """Fetch a member from a specific group."""
+        """Fetch a member from a specific group.
+
+        Raises:
+            MissingRecordError: If the group or member is not registered.
+        """
         group = self.get_group(group_id)
         try:
             return group.members[member_id]
         except KeyError as exc:
-            raise KeyError(
+            raise MissingRecordError(
                 f"Member {member_id!r} was not found in group {group_id!r}."
             ) from exc
 

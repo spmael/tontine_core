@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from tontine.exceptions import DuplicateJournalError
+from tontine.exceptions import DuplicateJournalError, MissingRecordError
 from tontine.ledger import EntryDirection, JournalEntry, LedgerEntry, LedgerRepository
 
 
@@ -37,9 +37,14 @@ def test_posted_journal_and_entries_are_immutable() -> None:
 def test_duplicate_journal_ids_are_rejected() -> None:
     repository = LedgerRepository()
     repository.post(journal())
+    original_history = repository.journals()
+    original_balance = repository.balance_for("cash-xaf", "XAF")
 
     with pytest.raises(DuplicateJournalError):
         repository.post(journal())
+
+    assert repository.journals() == original_history
+    assert repository.balance_for("cash-xaf", "XAF") == original_balance
 
 
 def test_reversal_preserves_original_provenance() -> None:
@@ -55,6 +60,16 @@ def test_reversal_preserves_original_provenance() -> None:
 
     assert reversal.source_event == "reversal:journal-001"
     assert reversal.reference == "journal-001"
+    assert repository.balance_for(
+        "cash-xaf",
+        "XAF",
+        as_of=datetime(2027, 1, 19, 12, 0, tzinfo=UTC),
+    ) == Decimal("150000")
+    assert repository.balance_for(
+        "cash-xaf",
+        "XAF",
+        as_of=reversal.recorded_at,
+    ) == Decimal("0")
     assert repository.balance_for("cash-xaf", "XAF") == Decimal("0")
     assert repository.balance_for("member-capital", "XAF") == Decimal("0")
 
@@ -76,6 +91,16 @@ def test_adjustment_is_explicit_and_traceable() -> None:
 
     assert adjustment.source_event == "adjustment:journal-001"
     assert adjustment.reference == "journal-001"
+    assert repository.balance_for(
+        "cash-xaf",
+        "XAF",
+        as_of=datetime(2027, 1, 19, 12, 0, tzinfo=UTC),
+    ) == Decimal("150000")
+    assert repository.balance_for(
+        "cash-xaf",
+        "XAF",
+        as_of=adjustment.recorded_at,
+    ) == Decimal("150100")
     assert repository.balance_for("cash-xaf", "XAF") == Decimal("150100")
 
 
@@ -83,8 +108,8 @@ def test_reversal_and_adjustment_require_existing_journals() -> None:
     repository = LedgerRepository()
     timestamp = datetime(2027, 1, 20, 12, 0, tzinfo=UTC)
 
-    with pytest.raises(KeyError, match="not found"):
+    with pytest.raises(MissingRecordError, match="not found"):
         repository.reverse("reversal", "missing", timestamp)
 
-    with pytest.raises(KeyError, match="not found"):
+    with pytest.raises(MissingRecordError, match="not found"):
         repository.adjust("adjustment", "missing", (), timestamp, "Correction")

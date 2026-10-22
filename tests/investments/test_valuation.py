@@ -21,13 +21,34 @@ def test_valuation_calculates_nav_unit_price_and_member_value() -> None:
     assert Decimal("33") < ownership < Decimal("34")
 
 
-def test_valuation_rejects_zero_units_and_negative_values() -> None:
-    with pytest.raises(ValueError, match="(?i)units"):
-        InvestmentValuation(
-            assets=Decimal("100"),
-            liabilities=Decimal("0"),
-            units_outstanding=Decimal("0"),
-        )
+def test_valuation_without_units_keeps_nav_and_omits_per_unit_values() -> None:
+    valuation = InvestmentValuation(
+        assets=Decimal("100"),
+        liabilities=Decimal("40"),
+        units_outstanding=Decimal("0"),
+    )
+
+    assert valuation.has_units_outstanding is False
+    assert valuation.nav == Decimal("60")
+    assert valuation.unit_price is None
+    assert valuation.member_value(Decimal("0")) is None
+    assert valuation.member_ownership_percentage(Decimal("0")) is None
+    with pytest.raises(ValueError, match="exceed"):
+        valuation.member_ownership_percentage(Decimal("1"))
+    with pytest.raises(ValueError, match="non-negative"):
+        valuation.member_value(Decimal("-1"))
+
+
+def test_valuation_with_units_reports_units_outstanding() -> None:
+    valuation = InvestmentValuation(Decimal("100"), Decimal("0"), Decimal("1"))
+
+    assert valuation.has_units_outstanding is True
+    assert valuation.unit_price == Decimal("100")
+
+
+def test_valuation_rejects_negative_values() -> None:
+    with pytest.raises(ValueError, match="non-negative"):
+        InvestmentValuation(Decimal("100"), Decimal("0"), Decimal("-1"))
 
     with pytest.raises(ValueError, match="non-negative"):
         InvestmentValuation(

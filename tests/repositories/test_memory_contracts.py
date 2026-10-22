@@ -3,6 +3,7 @@ from typing import Protocol
 import pytest
 
 from tontine.accounts import FinancialAccount
+from tontine.exceptions import MissingRecordError
 from tontine.groups import Group
 from tontine.repositories import (
     AccountRepository,
@@ -35,7 +36,7 @@ def test_group_repository_has_deterministic_listing_and_duplicate_rules() -> Non
     assert [group.group_id for group in repository.list()] == ["group-a", "group-b"]
     with pytest.raises(ValueError, match="already"):
         repository.add(make_group("group-a"))
-    with pytest.raises(KeyError):
+    with pytest.raises(MissingRecordError):
         repository.get("missing")
 
 

@@ -1,10 +1,16 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
 
-from tontine.contributions import ContributionCycle, ContributionStatus
-from tontine.exceptions import DuplicateContributionError
+from tontine.contributions import (
+    Contribution,
+    ContributionCycle,
+    ContributionStatus,
+    Penalty,
+    PenaltyReason,
+)
+from tontine.exceptions import DuplicateContributionError, MissingRecordError
 
 
 @pytest.fixture
@@ -144,5 +150,117 @@ def test_cycle_assesses_fixed_penalties_after_grace_period() -> None:
     assert adjusted.penalty == Decimal("0")
     assert cycle.penalties_total == Decimal("50")
 
-    with pytest.raises(KeyError, match="No contribution"):
+    with pytest.raises(MissingRecordError, match="No contribution"):
         cycle.penalty_for("unknown")
+
+
+def test_penalties_preserve_explicit_occurrence_times() -> None:
+    cycle = ContributionCycle(
+        cycle_id="2027-02",
+        start_date=date(2027, 2, 1),
+        due_date=date(2027, 2, 15),
+        timezone="UTC",
+        grace_period_days=2,
+        late_penalty=Decimal("50"),
+        penalty_currency="JPY",
+    )
+    cycle.add_expected_contribution("member-late", Decimal("100"))
+    cycle.add_expected_contribution("member-missed", Decimal("100"))
+    payment_time = datetime.fromisoformat("2027-02-18T10:00:00+00:00")
+    assessment_time = datetime.fromisoformat("2027-02-19T10:00:00+00:00")
+
+    late = cycle.record_contribution(
+        "member-late",
+        Decimal("100"),
+        payment_date=payment_time,
+        as_of=assessment_time,
+    )
+    missed = cycle.record_contribution(
+        "member-missed",
+        None,
+        as_of=assessment_time,
+    )
+
+    assert late.payment_date == payment_time
+    assert late.penalty_record is not None
+    assert late.penalty_record.assessed_on == payment_time
+    assert missed.penalty_record is not None
+    assert missed.penalty_record.assessed_on == assessment_time
+
+
+@pytest.mark.parametrize("field", ["payment_date", "as_of"])
+def test_contribution_timestamps_name_invalid_field_and_timezone_fix(
+    open_cycle: ContributionCycle,
+    field: str,
+) -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            rf"{field} must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
+        open_cycle.record_contribution(
+            "member-1",
+            Decimal("30000"),
+            **{field: datetime(2027, 1, 15)},
+        )
+
+
+def test_penalty_timestamp_names_field_and_timezone_fix() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"assessed_on must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
+        Penalty(
+            member_id="member-1",
+            cycle_id="cycle-1",
+            reason=PenaltyReason.LATE_CONTRIBUTION,
+            amount=Decimal("50"),
+            currency="JPY",
+            assessed_on=datetime(2027, 1, 15),
+        )
+
+    assert (
+        Penalty(
+            member_id="member-1",
+            cycle_id="cycle-1",
+            reason=PenaltyReason.LATE_CONTRIBUTION,
+            amount=Decimal("50"),
+            currency="JPY",
+            assessed_on=datetime(2027, 1, 15, tzinfo=UTC),
+        ).assessed_on.tzinfo
+        is UTC
+    )
+
+
+def test_contribution_record_rejects_naive_payment_date() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"payment_date must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
+        Contribution(
+            member_id="member-1",
+            cycle_id="cycle-1",
+            expected_amount=Decimal("30000"),
+            actual_amount=Decimal("30000"),
+            payment_date=datetime(2027, 1, 15),
+            status=ContributionStatus.PAID,
+        )
+
+    contribution = Contribution(
+        member_id="member-1",
+        cycle_id="cycle-1",
+        expected_amount=Decimal("30000"),
+        actual_amount=Decimal("30000"),
+        payment_date=datetime(2027, 1, 15, tzinfo=UTC),
+        status=ContributionStatus.PAID,
+    )
+    assert contribution.payment_date is not None
+    assert contribution.payment_date.tzinfo is UTC

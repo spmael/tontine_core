@@ -2,7 +2,7 @@
 id: CAP-CLASSIC-001
 status: shipped
 started: 2026-09-12
-completed: 2026-09-12
+completed: 2026-10-18
 adr_refs:
   - ADR-002
 depends_on:
@@ -40,12 +40,14 @@ without moving funds.
 - [x] Calculate the expected payout from recorded contribution amounts.
 - [x] Record payouts with historical recipient data and reject duplicates.
 - [x] Apply an explicit configurable policy when contributions are unpaid.
+- [x] Generate a reproducible rotation with immutable randomization provenance.
 
 ## Implementation Tasks
 
 - [x] TASK-CLASSIC-001: Define rotation order, recipient selection, and payout calculation.
 - [x] TASK-CLASSIC-002: Record payouts with immutable provenance and duplicate protection.
 - [x] TASK-CLASSIC-003: Add configurable unpaid-contribution policy and tests.
+- [x] [TASK-CLASSIC-004](../tasks/TASK-CLASSIC-004.md): Add auditable randomized rotation.
 
 ## Verification
 

@@ -26,6 +26,7 @@ def test_records_purchase_sale_income_and_fee_activity() -> None:
         effective_date=date(2027, 1, 30),
         recorded_at=recorded_at,
         source="treasurer_statement",
+        units=Decimal("100"),
     )
     sale = registry.record_activity(
         event_id="sale-1",
@@ -36,6 +37,7 @@ def test_records_purchase_sale_income_and_fee_activity() -> None:
         effective_date=date(2027, 2, 15),
         recorded_at=recorded_at,
         source="treasurer_statement",
+        units=Decimal("100"),
     )
     income = registry.record_activity(
         event_id="income-1",
@@ -64,6 +66,12 @@ def test_records_purchase_sale_income_and_fee_activity() -> None:
         InvestmentActivityType.INCOME,
         InvestmentActivityType.FEE,
     ]
+    assert (purchase.units, sale.units, income.units, fee.units) == (
+        Decimal("100"),
+        Decimal("100"),
+        None,
+        None,
+    )
 
 
 def test_activity_is_immutable_and_duplicate_events_are_rejected() -> None:
@@ -78,6 +86,7 @@ def test_activity_is_immutable_and_duplicate_events_are_rejected() -> None:
         "effective_date": date(2027, 1, 30),
         "recorded_at": datetime(2027, 1, 31, 12, 0, tzinfo=UTC),
         "source": "statement",
+        "units": Decimal("100"),
     }
     activity = registry.record_activity(**arguments)
 
@@ -98,11 +107,18 @@ def test_activity_rejects_invalid_identifiers_amounts_and_timestamps() -> None:
         "effective_date": date(2027, 1, 1),
         "recorded_at": datetime(2027, 1, 1, tzinfo=UTC),
         "source": "statement",
+        "units": Decimal("1"),
     }
     registry = InvestmentActivityRegistry()
     with pytest.raises(ValueError, match="identifier"):
         registry.record_activity(**{**arguments, "event_id": " "})
-    with pytest.raises(ValueError, match="non-negative"):
+    with pytest.raises(ValueError, match="must be positive"):
         registry.record_activity(**{**arguments, "amount": Decimal("-1")})
-    with pytest.raises(ValueError, match="timezone-aware"):
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"recorded_at must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
         registry.record_activity(**{**arguments, "recorded_at": datetime(2027, 1, 1)})

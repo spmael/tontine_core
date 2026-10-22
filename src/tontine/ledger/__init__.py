@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+from bisect import bisect_left, bisect_right
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import StrEnum
 
+from tontine._datetime import require_aware_datetime
 from tontine.currencies import CurrencyCode
-from tontine.exceptions import DuplicateJournalError
+from tontine.exceptions import DuplicateJournalError, MissingRecordError
 
 
 class LedgerAccountId(str):
@@ -52,7 +54,11 @@ class LedgerEntry:
 
 @dataclass(frozen=True)
 class JournalEntry:
-    """Immutable journal record with timestamp and source-event provenance."""
+    """Immutable journal record with timestamp and source-event provenance.
+
+    ``recorded_at`` must be timezone-aware; construct it with
+    ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
+    """
 
     journal_id: str
     recorded_at: datetime
@@ -69,20 +75,24 @@ class JournalEntry:
             raise ValueError("Journal description is required.")
         if not self.source_event.strip():
             raise ValueError("Journal source event is required.")
-        if self.recorded_at.tzinfo is None or self.recorded_at.utcoffset() is None:
-            raise ValueError("Journal timestamps must be timezone-aware.")
+        require_aware_datetime(self.recorded_at, "recorded_at")
         object.__setattr__(self, "entries", tuple(self.entries))
 
 
 class InMemoryLedgerRepository:
-    """Store posted journals and derive balances from their entries in memory."""
+    """Store immutable journals and maintain rebuildable balance projections."""
 
     def __init__(self) -> None:
         self._journals: list[JournalEntry] = []
         self._journal_ids: set[str] = set()
+        self._balances: dict[tuple[LedgerAccountId, CurrencyCode], Decimal] = {}
+        self._balance_history: dict[
+            tuple[LedgerAccountId, CurrencyCode],
+            list[tuple[datetime, Decimal]],
+        ] = {}
 
     def post(self, journal: JournalEntry) -> None:
-        """Post a balanced journal without maintaining manual balances.
+        """Post a balanced journal and update its derived balance projection.
 
         Args:
             journal: Immutable journal with Decimal entries in one currency.
@@ -96,6 +106,56 @@ class InMemoryLedgerRepository:
             raise DuplicateJournalError(
                 f"Journal {journal.journal_id!r} is already posted."
             )
+        self._validate_journal(journal)
+        deltas: dict[tuple[LedgerAccountId, CurrencyCode], Decimal] = {}
+        for entry in journal.entries:
+            key = (entry.account_id, entry.currency)
+            deltas[key] = deltas.get(key, Decimal("0")) + (
+                entry.amount
+                if entry.direction is EntryDirection.DEBIT
+                else -entry.amount
+            )
+        balance_updates = {
+            key: self._balances.get(key, Decimal("0")) + delta
+            for key, delta in deltas.items()
+        }
+        history_updates = {
+            key: self._insert_historical_delta(
+                self._balance_history.get(key, []),
+                journal.recorded_at,
+                delta,
+            )
+            for key, delta in deltas.items()
+        }
+        self._journals.append(journal)
+        self._journal_ids.add(journal.journal_id)
+        self._balances.update(balance_updates)
+        self._balance_history.update(history_updates)
+
+    @staticmethod
+    def _insert_historical_delta(
+        history: list[tuple[datetime, Decimal]],
+        recorded_at: datetime,
+        delta: Decimal,
+    ) -> list[tuple[datetime, Decimal]]:
+        recorded_at = recorded_at.astimezone(UTC)
+        index = bisect_left(history, recorded_at, key=lambda item: item[0])
+        updated = list(history)
+        if index < len(history) and history[index][0] == recorded_at:
+            for position in range(index, len(history)):
+                timestamp, balance = history[position]
+                updated[position] = (timestamp, balance + delta)
+            return updated
+
+        previous_balance = history[index - 1][1] if index else Decimal("0")
+        updated.insert(index, (recorded_at, previous_balance + delta))
+        for position in range(index + 1, len(updated)):
+            timestamp, balance = updated[position]
+            updated[position] = (timestamp, balance + delta)
+        return updated
+
+    @staticmethod
+    def _validate_journal(journal: JournalEntry) -> None:
         if not any(
             entry.direction is EntryDirection.DEBIT for entry in journal.entries
         ):
@@ -125,8 +185,49 @@ class InMemoryLedgerRepository:
         )
         if debit_total != credit_total:
             raise ValueError("Journal debit and credit totals must balance.")
-        self._journals.append(journal)
-        self._journal_ids.add(journal.journal_id)
+
+    def journals(self) -> tuple[JournalEntry, ...]:
+        """Return posted journals in immutable posting order."""
+        return tuple(self._journals)
+
+    def rebuild_balance_projection(self) -> None:
+        """Rebuild current balances by validating and replaying posted journals.
+
+        Journal records remain the source of truth; this operation replaces only
+        the derived in-memory account/currency projection.
+        """
+        balances: dict[tuple[LedgerAccountId, CurrencyCode], Decimal] = {}
+        balance_history: dict[
+            tuple[LedgerAccountId, CurrencyCode],
+            list[tuple[datetime, Decimal]],
+        ] = {}
+        journal_ids: set[str] = set()
+        for journal in self._journals:
+            if journal.journal_id in journal_ids:
+                raise DuplicateJournalError(
+                    f"Journal {journal.journal_id!r} is already posted."
+                )
+            self._validate_journal(journal)
+            journal_ids.add(journal.journal_id)
+            deltas: dict[tuple[LedgerAccountId, CurrencyCode], Decimal] = {}
+            for entry in journal.entries:
+                key = (entry.account_id, entry.currency)
+                delta = (
+                    entry.amount
+                    if entry.direction is EntryDirection.DEBIT
+                    else -entry.amount
+                )
+                deltas[key] = deltas.get(key, Decimal("0")) + delta
+            for key, delta in deltas.items():
+                balances[key] = balances.get(key, Decimal("0")) + delta
+                balance_history[key] = self._insert_historical_delta(
+                    balance_history.get(key, []),
+                    journal.recorded_at,
+                    delta,
+                )
+        self._balances = balances
+        self._balance_history = balance_history
+        self._journal_ids = journal_ids
 
     def reverse(
         self,
@@ -139,10 +240,14 @@ class InMemoryLedgerRepository:
         Args:
             journal_id: Identifier for the new reversal journal.
             original_journal_id: Identifier of the posted journal to reverse.
-            recorded_at: Timezone-aware timestamp for the reversal.
+            recorded_at: Timezone-aware timestamp for the reversal, constructed
+                with ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
 
         Returns:
             The immutable reversal journal.
+
+        Raises:
+            MissingRecordError: If the original journal is not posted.
         """
         original = self._journal_for(original_journal_id)
         reversal = JournalEntry(
@@ -182,11 +287,15 @@ class InMemoryLedgerRepository:
             journal_id: Identifier for the new adjustment journal.
             original_journal_id: Identifier of the journal being adjusted.
             entries: Balanced Decimal entries for the adjustment.
-            recorded_at: Timezone-aware timestamp for the adjustment.
+            recorded_at: Timezone-aware timestamp for the adjustment, constructed
+                with ``datetime.timezone.utc`` or ``zoneinfo.ZoneInfo``.
             description: Human-readable correction description.
 
         Returns:
             The immutable adjustment journal.
+
+        Raises:
+            MissingRecordError: If the original journal is not posted.
         """
         self._journal_for(original_journal_id)
         adjustment = JournalEntry(
@@ -208,23 +317,34 @@ class InMemoryLedgerRepository:
                 if journal.journal_id == journal_id
             )
         except StopIteration as exc:
-            raise KeyError(f"Journal {journal_id!r} was not found.") from exc
+            raise MissingRecordError(f"Journal {journal_id!r} was not found.") from exc
 
-    def balance_for(self, account_id: str, currency: str) -> Decimal:
-        """Derive an account balance from posted entries in one currency."""
-        expected_currency = CurrencyCode(currency)
-        return sum(
-            (
-                entry.amount
-                if entry.direction is EntryDirection.DEBIT
-                else -entry.amount
-                for journal in self._journals
-                for entry in journal.entries
-                if entry.account_id == account_id
-                and entry.currency == expected_currency
-            ),
-            Decimal("0"),
-        )
+    def balance_for(
+        self,
+        account_id: str,
+        currency: str,
+        *,
+        as_of: datetime | None = None,
+    ) -> Decimal:
+        """Return a derived debit-positive balance in one currency.
+
+        Args:
+            account_id: Logical ledger account identifier.
+            currency: ISO currency code for the balance.
+            as_of: Optional timezone-aware instant; journals recorded at or
+                before this instant are included.
+
+        Raises:
+            ValueError: If ``as_of`` is not timezone-aware.
+        """
+        key = (LedgerAccountId(account_id), CurrencyCode(currency))
+        if as_of is None:
+            return self._balances.get(key, Decimal("0"))
+        require_aware_datetime(as_of, "as_of")
+        as_of = as_of.astimezone(UTC)
+        history = self._balance_history.get(key, [])
+        index = bisect_right(history, as_of, key=lambda item: item[0])
+        return history[index - 1][1] if index else Decimal("0")
 
 
 __all__ = [

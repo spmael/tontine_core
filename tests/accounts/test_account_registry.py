@@ -9,7 +9,7 @@ from tontine.accounts import (
     FinancialAccount,
     FinancialAccountRegistry,
 )
-from tontine.exceptions import DuplicateAccountError
+from tontine.exceptions import DuplicateAccountError, MissingRecordError
 
 
 def make_account(status: AccountStatus = AccountStatus.ACTIVE) -> FinancialAccount:
@@ -74,7 +74,7 @@ def test_registry_links_account_to_logical_ledger_identifier() -> None:
 def test_registry_rejects_missing_and_inactive_account_references() -> None:
     registry = FinancialAccountRegistry()
 
-    with pytest.raises(KeyError):
+    with pytest.raises(MissingRecordError):
         registry.record_event(
             event_id="payout-1",
             event_type="payout",
@@ -99,8 +99,8 @@ def test_registry_rejects_invalid_ledger_links_and_missing_ledger_links() -> Non
     with pytest.raises(ValueError, match="invalid"):
         registry.link_ledger_account("account-1", "ledger account")
 
-    with pytest.raises(KeyError, match="linked"):
+    with pytest.raises(MissingRecordError, match="linked"):
         registry.ledger_account_for("account-1")
 
-    with pytest.raises(KeyError, match="not found"):
+    with pytest.raises(MissingRecordError, match="not found"):
         registry.get("missing")

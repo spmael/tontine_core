@@ -9,6 +9,7 @@ from tontine.audit import AuditEvent
 from tontine.classic import ClassicPayout, ClassicRotation
 from tontine.contributions import ContributionCycle
 from tontine.governance import RotationProposal, Ruleset
+from tontine.hybrid.allocation_models import HybridAllocation, PendingHybridAllocation
 from tontine.investments import InvestmentActivity
 from tontine.ledger import JournalEntry
 from tontine.members import Member
@@ -22,7 +23,7 @@ class CycleRepository(Protocol):
         """Add a cycle or raise for a duplicate cycle identifier."""
 
     def get(self, cycle_id: str) -> ContributionCycle:
-        """Return a cycle or raise KeyError when missing."""
+        """Return a cycle or raise MissingRecordError when missing."""
 
     def list(self) -> Sequence[ContributionCycle]:
         """Return cycles in deterministic identifier order."""
@@ -50,7 +51,6 @@ class InvestmentRepository(Protocol):
         """Return activities in deterministic event order."""
 
 
-
 @runtime_checkable
 class MemberRepository(Protocol):
     """Storage boundary for member identity and lifecycle records."""
@@ -59,7 +59,7 @@ class MemberRepository(Protocol):
         """Add a member or raise for a duplicate member identifier."""
 
     def get(self, member_id: str) -> Member:
-        """Return a member or raise KeyError when missing."""
+        """Return a member or raise MissingRecordError when missing."""
 
     def list(self) -> Sequence[Member]:
         """Return members in deterministic identifier order."""
@@ -73,7 +73,7 @@ class ClassicRepository(Protocol):
         """Save a rotation version or raise for a duplicate identifier."""
 
     def get_rotation(self, rotation_id: str) -> ClassicRotation:
-        """Return a rotation or raise KeyError when missing."""
+        """Return a rotation or raise MissingRecordError when missing."""
 
     def record_payout(self, payout: ClassicPayout) -> None:
         """Record a payout or raise for a duplicate cycle."""
@@ -90,7 +90,7 @@ class GovernanceRepository(Protocol):
         """Save a proposal or raise for a duplicate proposal identifier."""
 
     def get_proposal(self, proposal_id: str) -> RotationProposal:
-        """Return a proposal or raise KeyError when missing."""
+        """Return a proposal or raise MissingRecordError when missing."""
 
     def save_ruleset(self, ruleset: Ruleset) -> None:
         """Save a ruleset version or raise for a duplicate version."""
@@ -112,3 +112,28 @@ class AuditRepository(Protocol):
         aggregate_id: str,
     ) -> Sequence[AuditEvent]:
         """Return audit history for one aggregate."""
+
+
+@runtime_checkable
+class AllocationRepository(Protocol):
+    """Persistence boundary for one hybrid allocation per contribution.
+
+    Records are immutable after insertion except for the explicit transition
+    from a pending allocation to its resolved allocation. Implementations must
+    preserve the allocation and contribution identifiers through that
+    transition, reject a second contribution record, raise
+    ``MissingRecordError`` for absent keys, and list records in deterministic
+    contribution-identifier order.
+    """
+
+    def add(self, allocation: HybridAllocation | PendingHybridAllocation) -> None:
+        """Insert the initial pending or resolved record for a contribution."""
+
+    def resolve_pending(self, allocation: HybridAllocation) -> None:
+        """Replace a matching pending record with its immutable resolution."""
+
+    def get(self, contribution_id: str) -> HybridAllocation | PendingHybridAllocation:
+        """Return the record for a contribution or raise MissingRecordError."""
+
+    def list(self) -> Sequence[HybridAllocation | PendingHybridAllocation]:
+        """Return records in deterministic contribution-identifier order."""

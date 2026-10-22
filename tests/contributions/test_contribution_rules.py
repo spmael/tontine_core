@@ -9,6 +9,7 @@ from tontine.contributions import (
     ContributionRule,
     CycleStatus,
     DueDateConvention,
+    PenaltyDestination,
 )
 from tontine.exceptions import InvalidCurrencyError
 
@@ -28,6 +29,26 @@ def test_weekly_jpy_rule_uses_weekday_convention() -> None:
     assert rule.amount == Decimal("30000")
     assert rule.frequency is ContributionFrequency.WEEKLY
     assert rule.due_day == 0
+    assert rule.penalty_destination is PenaltyDestination.COMMON_RESERVE
+
+
+@pytest.mark.parametrize("destination", list(PenaltyDestination))
+def test_rule_normalizes_configured_penalty_destination(
+    destination: PenaltyDestination,
+) -> None:
+    rule = ContributionRule(
+        amount=Decimal("30000"),
+        currency="JPY",
+        frequency=ContributionFrequency.WEEKLY,
+        due_date_convention=DueDateConvention.WEEKDAY,
+        due_day=0,
+        grace_period_days=2,
+        effective_date=date(2027, 1, 1),
+        timezone="Asia/Tokyo",
+        penalty_destination=destination.value,
+    )
+
+    assert rule.penalty_destination is destination
 
 
 def test_daily_jpy_rule_uses_every_day_convention() -> None:
@@ -226,7 +247,13 @@ def test_cycle_rejects_naive_timestamps() -> None:
     cycle = ContributionCycle("cycle-3", date(2027, 1, 1), date(2027, 1, 7), "UTC")
     cycle.add_expected_contribution("member-1", Decimal("1"))
 
-    with pytest.raises(ValueError, match="timezone-aware"):
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"payment_date must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
         cycle.record_contribution(
             "member-1",
             Decimal("1"),

@@ -65,7 +65,13 @@ def test_vocabulary_rejects_invalid_allocations_and_naive_fx_timestamp() -> None
     with pytest.raises(ValueError, match="100"):
         AllocationRule(categories={"cash": Decimal("99")})
 
-    with pytest.raises(ValueError, match="timezone-aware"):
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"effective_at must be timezone-aware.*datetime\.timezone\.utc.*"
+            r"zoneinfo\.ZoneInfo"
+        ),
+    ):
         FxRate(
             base_currency="EUR",
             quote_currency="JPY",

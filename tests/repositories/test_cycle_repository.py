@@ -4,6 +4,7 @@ from decimal import Decimal
 import pytest
 
 from tontine.contributions import ContributionCycle
+from tontine.exceptions import MissingRecordError
 from tontine.repositories import CycleRepository, InMemoryCycleRepository
 
 
@@ -27,5 +28,5 @@ def test_cycle_repository_lists_cycles_deterministically() -> None:
     with pytest.raises(ValueError, match="already"):
         repository.add(cycle("cycle-a"))
 
-    with pytest.raises(KeyError, match="not found"):
+    with pytest.raises(MissingRecordError, match="not found"):
         repository.get("missing")

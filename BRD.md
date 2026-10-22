@@ -45,6 +45,8 @@ The implementation currently provides the following domain capabilities:
 - contribution rules and contribution cycles;
 - expected, received, pending, partial, late, and missed contributions;
 - classic rotation recipient selection and payout calculation;
+- reproducible classic rotation generation with immutable randomization provenance;
+- effective-cycle classic rotation versions and approved one-cycle recipient overrides;
 - classic payout records and duplicate-payout prevention;
 - unpaid-contribution payout policy evaluation;
 - financial-account records with masked references and custody metadata;
@@ -52,6 +54,8 @@ The implementation currently provides the following domain capabilities:
 - double-entry ledger entries and balanced journal posting;
 - immutable ledger records with reversal and adjustment support;
 - investment allocation rules and effective-cycle schedules;
+- immutable hybrid contribution policies and effective-cycle schedules;
+- pure hybrid contribution split calculations using recorded amounts received;
 - investment asset definitions and manual valuations;
 - investment activity records for purchases, sales, income, and fees;
 - member unit issuance, redemption, and balance derivation;
@@ -69,7 +73,8 @@ The package uses a `src/` layout and supports Python 3.12 or newer.
 The public top-level helpers are:
 
 - `tontine.create_group(...)` for creating a draft group;
-- `tontine.create_contribution_cycle(...)` for creating a contribution cycle;
+- `tontine.create_contribution_cycle(...)` for creating a contribution cycle,
+  optionally applying an effective contribution rule's penalty settings;
 - `tontine.__version__` for the package version.
 
 Capability-specific public classes are exposed from their respective modules:
@@ -80,6 +85,7 @@ Capability-specific public classes are exposed from their respective modules:
 - `tontine.accounts`;
 - `tontine.ledger`;
 - `tontine.investments`;
+- `tontine.hybrid`;
 - `tontine.governance`;
 - `tontine.audit`;
 - `tontine.reporting`; and
@@ -110,7 +116,8 @@ Invalid state transitions are rejected with domain errors.
 
 Contribution rules support daily, weekly, and monthly frequencies. Rules validate
 currency, amount, due-date convention, grace period, due day, optional late
-penalty, effective date, and IANA timezone.
+penalty and its destination, effective date, and IANA timezone. The penalty
+destination defaults to `COMMON_RESERVE`.
 
 Contribution cycles validate their identifier and timezone and maintain expected
 and recorded contributions. Contribution status is derived from expected amount,
@@ -119,12 +126,15 @@ not currently attach a payout or allocation record. A configured fixed penalty i
 assessed after the due date plus the configured grace period for late or missed
 contributions.
 
-Duplicate contribution records are rejected unless an explicit adjustment is
-requested. Penalties are separate from contribution amounts and do not increase
+Cycles created with an effective rule carry its penalty amount, currency, grace
+period, and destination into assessments. Duplicate contribution records are
+rejected unless an explicit adjustment is requested. Penalties are separate
+from contribution amounts and do not increase
 contribution totals or investment units. Each assessment records its member,
 cycle, reason, amount, timezone-aware assessment time, unpaid status, and
-destination. `COMMON_RESERVE` is the default destination. Payment processing,
-penalty settlement, waivers, and ledger posting for penalties are outside the
+destination. `COMMON_RESERVE` remains the default when a cycle is created
+without a rule. Payment processing, penalty settlement, waivers, and ledger
+posting for penalties are outside the
 current package behavior.
 
 ### 5.3 Classic rotation and payouts
@@ -132,6 +142,27 @@ current package behavior.
 A classic rotation contains an ordered, unique, non-empty set of active member
 identifiers. Cycle recipient selection is deterministic and wraps after the last
 member. Expected payout is the exact `Decimal` sum of member contributions.
+
+A rotation may be generated from an active-member set and explicit seed. The
+immutable rotation retains the seed, algorithm version, canonical input member
+set, generated order, initiating actor, and timezone-aware occurrence time so
+adapters can persist and later verify its provenance. Recipient lookup uses the
+recorded order and does not randomize again.
+
+Rotation schedules contain immutable versions with positive version numbers and
+effective cycles. The latest effective cycle applies; the highest version number
+breaks a tie at the same effective cycle. Adding a version returns a new schedule,
+so existing schedule instances and earlier effective-cycle resolutions remain
+unchanged.
+
+An approved one-cycle exception overrides only the selected recipient for that
+cycle. The recipient must belong to the effective rotation. The exception does
+not shift later recipients, change the base rotation, alter the expected payout,
+or change unpaid-contribution eligibility. It records its proposal and approval
+event references and an aware approval time. The schedule consumes this approved
+effect without replaying governance proposals or votes; proposal creation and
+approval remain governance behavior. No durable persistence is provided by the
+core package.
 
 Payout records require a positive cycle number, recipient, non-negative amount,
 valid currency, timezone-aware timestamp, and source event. Duplicate payouts for
@@ -169,6 +200,20 @@ valuations, and liabilities include manually supplied provenance. Supported
 activity categories are purchase, sale, income, and fee. Manual valuations and
 liabilities require non-negative values, effective dates, and sources.
 
+Activity in the asset currency is recorded directly. Activity in another
+currency requires a supplied FX rate for exactly that currency pair; the record
+keeps the original amount, the rate and its source, and the unrounded
+asset-currency amount. Recorded activity can be queried by asset, type, and
+inclusive effective-date bounds in effective-date, recorded-time, and event-ID
+order. Purchases and sales may reference an approved governance decision that
+authorizes that asset and activity type up to a cumulative maximum in the asset
+currency. Activity amounts are strictly positive, recorded gross of tax or
+rebates, and at least one smallest ISO 4217 unit of both the activity and asset
+currencies; smaller amounts are rejected rather than rounded (ADR-005).
+Purchases and sales also record a strictly positive asset quantity (`units`);
+income and fees carry none. Waivers,
+corrections, and unit-only corporate actions are not recorded as activity.
+
 Member unit balances are maintained by issue and redemption operations. Unit
 distributions are not currently modeled. The unit ledger calculates each
 member's ownership percentage from their balance divided by total outstanding
@@ -185,6 +230,9 @@ member value = member units * unit price
 ownership percentage = member units / total units * 100
 ```
 
+Zero units outstanding is valid before the first issuance: NAV is still
+derived, while unit price, member value, and ownership percentage are `None`.
+
 Liability registries reject duplicate identifiers and aggregate recorded
 liabilities by currency. Asset and investment-activity aggregation remains the
 responsibility of the caller; the current package does not derive total assets
@@ -196,15 +244,31 @@ does not retrieve market prices or FX rates automatically.
 
 ### 5.7 Governance and audit
 
-Rulesets are immutable versions with positive versions and effective cycles. The
-current implementation resolves rulesets by effective cycle; it does not attach
-ruleset identifiers to historical financial or audit events.
-Rotation proposals validate eligible proposers, candidate member order, approval
-thresholds, cycle numbers, and timezone-aware dates.
+Rulesets are immutable versions with positive versions and effective cycles.
+Governance can propose and approve a ruleset activation or a classic rotation
+change, including a one-cycle recipient override that leaves the base rotation
+available for payout and unpaid-contribution policy calculations.
+Ruleset activation does not attach ruleset identifiers to historical financial
+events.
 
-Governance supports draft and open proposals, one-member-one-vote choices of yes,
-no, and abstain, duplicate-vote prevention, threshold evaluation, and effective
-rotation selection. Approval evaluation produces approved or rejected status;
+Proposals freeze their eligible electorate at creation and require explicit
+current-cycle context. Cycle-effective rule and rotation changes apply only
+after the current cycle; member exits, penalty waivers, and payout deferrals are
+decisions for the current cycle. An exit decision records its request cycle.
+Approval uses yes votes divided by the frozen electorate and a two-thirds quorum
+rounded up to a whole voter. Yes, no, and abstain votes count toward quorum;
+abstentions do not count as yes votes. A zero quorum remains available for
+threshold-only policy. A vote at the deadline is accepted and later votes are
+rejected. Early evaluation is permitted only after all eligible members have
+voted; otherwise evaluation waits until the deadline. Proposal effects are
+applied only on approval. An expulsion subject and the member whose penalty is
+being waived are excluded from the respective frozen electorate.
+
+Governance mutations require caller-supplied timezone-aware occurrence times.
+The registry supports immutable schema-versioned snapshots and deterministic
+rehydration; audit events preserve provenance but are not replayed as the
+canonical state source. Serialization formats and persistence adapters remain
+outside the core. Approval evaluation produces approved or rejected status;
 expire and cancel transitions are not currently implemented. Governance actions
 are recorded in an append-only audit registry.
 
@@ -216,6 +280,11 @@ occurrence times. Event details are preserved as read-only mappings.
 Member statements expose structured contribution history, payouts, investment
 summaries, penalties, and outstanding contribution totals. Penalties may be
 derived from contribution summaries and remain separate from contributions.
+Hybrid statements may also include a pure settlement position derived from
+recorded contribution cycles, allocations, arrears, payouts, and exits. The
+rotation-pot position is presented before member units, which are labelled
+"member funds: redeemable" and shown as a liability unless the recorded statutes
+give the group an unconditional right to refuse redemption.
 
 Group statements expose active members, current cycle, expected and received
 contributions, cash, investment value, liabilities, historical payouts, pending
@@ -223,6 +292,56 @@ proposals, penalties, outstanding contributions, and NAV.
 
 Reporting objects do not render PDF, Excel, HTML, or web pages. Presentation is
 the responsibility of the consuming application.
+
+### 5.9 Hybrid rule policies
+
+Hybrid rule schedules belong to an explicit group identifier. Their immutable
+versions record fund-share basis points, partial-payment orders, catch-up
+settings, exit-fee percentages, launch price and currency, maximum valuation age,
+declared legal form, statute flags, and payout-deferral settings.
+
+The latest effective cycle applies, with the highest version breaking a tie.
+Adding a version requires a caller-supplied current cycle and rejects retroactive
+activation. Cycle zero represents setup. A changed fee requires a complete
+intervening cycle between adoption and activation. Each version can record a
+governance decision reference, without interpreting approval.
+
+The pure contribution split uses the amount received: it rounds the fund share
+down to the currency's smallest ISO 4217 unit and assigns the exact remainder
+to the rotation pot. Expected amounts are used only to measure arrears and are
+not posted. Recorded contributions can be allocated once. The first allocation
+uses the launch unit price while no units are outstanding; otherwise allocation
+uses the latest fresh valuation on or before the pricing date. Without such a
+valuation, the fund share remains pending until it can be priced without
+backdating. Issued units round down to four decimal places, and the residual
+remains as fund cash. An allocation reversal is a linked append-only event that
+offsets the original pot, fund, units, and residual at the stored unit price;
+the original allocation is never changed.
+
+Cycle closure records unpaid rotation, fund, and penalty amounts as arrears.
+Recorded receipts are applied in the effective penalty and contribution order;
+the rule version and each amount are preserved. A missed contribution issues no
+units. Catch-up is governed by an explicit member election before the group's
+deadline, is priced at the receipt-date valuation, and remains pending if no
+usable valuation exists. The deadline default forfeits only the unpaid fund
+share; rotation arrears remain due. Penalty waivers require an approved
+governance decision. Redemption is blocked while rotation arrears remain, and
+unit offsets require an explicit valuation and event. These records do not
+initiate payment or transfer funds. Approved exits freeze new allocations and
+produce forward-priced entitlements, explicit arrears offsets, and payout
+statuses without executing payments. A pure settlement projection combines
+recorded dues, pot contributions and payouts, unit balances and values, pending
+allocations and exits, elections, and offsets for member reporting.
+
+Fees use one schedule for all units, with death fixed at zero. Cooperative
+expulsion fees cannot exceed voluntary-exit fees; other declared forms receive
+an explicit warning. Default payout settings cannot authorize more than 12
+months; a later exit-specific, reasoned governance extension is bounded by the
+24-month ceiling. Governance supports typed exit, waiver, and payout-deferral
+decisions. Hybrid arrears processing, member exit entitlements, and combined
+settlement reporting are implemented; the report derives unit liability
+presentation from recorded statute flags and keeps the rotation pot ahead of
+member units.
 
 ## 6. Persistence and Integration Boundary
 
