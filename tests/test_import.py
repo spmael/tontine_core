@@ -5,8 +5,8 @@ import tontine.exceptions as domain_exceptions
 
 
 def test_public_package_imports() -> None:
-    """Expose the package and its initial version."""
-    assert tontine.__version__ == "0.1.0"
+    """Expose the package and its current version."""
+    assert tontine.__version__ == "0.2.0"
     assert tontine.TontineError.__name__ == "TontineError"
     assert tontine.MissingRecordError.__name__ == "MissingRecordError"
     assert issubclass(tontine.MissingRecordError, tontine.TontineError)
